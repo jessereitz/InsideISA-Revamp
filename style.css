@@ -1,0 +1,163 @@
+body {
+  padding: 1em 1rem;
+  background: #666;
+}
+
+.controller {
+  position: fixed;
+  display: inline-block;
+  font-family: "Open Sans", sans-serif;
+}
+
+.controller button,
+.controller input[type=submit] {
+  border: 2px solid #fff;
+  color: #fff;
+  background: #666;
+  padding: 0.5em 0.5rem;
+  border-radius: 3px;
+  transition: all 0.1s;
+  display: block;
+  margin: 1em 0;
+  font-weight: bold;
+  font-family: "Open Sans", sans-serif;
+}
+
+.controller button:first-child {
+  margin-top: 0;
+}
+
+.controller button:hover {
+  background: #fff;
+  color: #666;
+  box-shadow: 2px 2px 10px 3px rgba(0,0,0,0.25);
+}
+
+.smallEditor {
+  display: inline-block;
+  position: absolute;
+  padding: 0.5em 1rem;
+  background: #fff;
+  box-shadow: 2px 2px 15px 5px rgba(0,0,0,0.25);
+  border-radius: 3px;
+  max-width: 25em;
+}
+
+.smallEditor::before {
+  background: white;
+  position: absolute;
+  left: -5px;
+  top: 5px;
+  content: "";
+  display: block;
+  width: 20px;
+  height: 20px;
+  transform: rotate(45deg);
+}
+
+.smallEditor form {
+  margin: 0;
+}
+
+.smallEditor button,
+.smallEditor input[type=submit] {
+  background: #fff;
+  border-color: #aaa;
+  color: #666;
+  font-weight: bold;
+}
+
+.smallEditor button:hover,
+.smallEditor input[type=submit]:hover {
+  background: #666;
+  color: #fff;
+  border-color: #666;
+  box-shadow: 2px 2px 10px 3px rgba(0,0,0,0.05);
+}
+
+.smallEditor .editable {
+  border: 2px solid #aaa;
+  border-radius: 3px;
+  font-size: 1em;
+  line-height: 1.5em;
+  padding: 0.25em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+  min-width: 15em;
+}
+
+.smallEditor .editable:hover {
+  border-width: 2px;
+}
+
+.smallEditor .editable:focus {
+  border-color: Highlight;
+}
+
+.smallEditor label {
+  display: inline-block;
+  margin-top: 1em;
+  font-size: small;
+}
+
+.email-preview {
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 2px 2px 15px 5px rgba(0,0,0,0.25);
+  padding-bottom: 1em;
+  width: 625px;
+  overflow: auto;
+  margin: 0 auto;
+}
+.editable {
+  border: 1px solid rgba(0,0,0,0);
+}
+.editable:hover {
+  border: 1px solid Highlight;
+}
+
+.imgEdit {
+  display: block;
+  position: relative;
+}
+
+.imgEdit__text {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: bold;
+  display: block;
+  visibility: hidden;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin-right: 0;
+  color: rgba(0,0,0,0);
+  font-size: 2em;
+  background: rgba(255,255,255, 0);
+  text-align: center;
+  padding-top: 5em;
+  transition: all 0.2s;
+}
+
+.imgEdit:hover .imgEdit__text {
+  visibility: visible;
+  color: #333;
+  background: rgba(255,255,255, 0.5);
+}
+
+.linkEdit {
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.linkEdit__text {
+  margin-left: 1.5rem;
+  color: rgba(0,0,0,0);
+  transition: color 0.2s;
+}
+
+.linkEdit:hover .linkEdit__text {
+  color: #666;
+}
