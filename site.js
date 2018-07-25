@@ -1,3 +1,26 @@
+const PLACEHOLDER_IMG = './images/placeholder.gif';
+const PLACEHOLDER_BLURB = "This is the blurb";
+
+/////////////////////////////
+/////     UTILITIES     /////
+/////////////////////////////
+function generateElement(tagName, klasses, id) {
+  if (!tagName) {
+    return False;
+  }
+  var el = document.createElement(tagName);
+  el.id = id;
+  for (let klass of klasses) {
+    el.classList.add(klass);
+  }
+
+    return el;
+}
+
+
+/////////////////////////////////
+/////     Popout Editor     /////
+/////////////////////////////////
 var PopoutEditor = {
   /*  PopoutEditor allows quick editing of more complex elements.
 
@@ -45,25 +68,10 @@ var PopoutEditor = {
   }
 }
 
-PopoutEditor.init();
-
-var PopoutEditable = {
-  fields: [],
-  renderFields: function() {
-    var html = '';
-    for (let field of this.fields) {
-      // console.log(field.render());
-      // html += field.render();
-    }
-    return html;
-  }
-}
-
 var PopoutEditorField = {
   init: function(fieldName) {
-    this.div = document.createElement('div');
-    this.div.setAttribute('contenteditable', 'true');
-    this.div.classList.add('editable');
+    this.div = Object.create(InlineEditable);
+    this.div.generateField('div', [], fieldName);
     this.div.id = fieldName
     this.label = document.createElement('label');
     this.label.setAttribute('for', fieldName);
@@ -73,21 +81,138 @@ var PopoutEditorField = {
     $where.append(this.label);
   },
   insertDiv: function($where) {
-    $where.append(this.div);
+    this.div.insertHTML($where);
+  }
+}
+
+
+
+var PopoutEditable = {
+  // PopoutEditables are elements which have multiple fields of information
+  // which must be supplied. These elements use the PopoutEditor to supply all
+  // the pertinent information.
+  init: function(tagName, placeholder, id) {
+    this.el = generateElement(tagName, id);
+    if (tagName === 'img') {
+      this.el.src = placeholder;
+    } else {
+      this.el.textContent = placeholder;
+    }
+  },
+  fields: [],
+  insertFields: function($where) {
+    // iterates through fields and renders them on the given HTML element ($where)
+    for (let field of fields) {
+      field.insertLabel($where);
+      field.insertDiv($where);
+    }
+  },
+  addField: function(fieldName) {
+    // Creates and pushes a new PopoutEditorField to this.fields.
+    var field = Object.create(PopoutEditorField);
+    field.init(fieldName);
+    this.fields.push(field);
+  },
+  insertHTML: function($where) {
+    $where.append(this.el);
+  }
+}
+
+var InlineEditable = {
+  // InlineEditables are elements which can be editable in-place. They are
+  // essentially elements with contenteditable set to true.
+  generateField: function(tagName, klasses, id) {
+    // Creates an InlineEditable element with appropriate classes and attrs.
+    if (!klasses) {
+      klasses = [];
+    }
+    klasses.push('editable');
+    this.el = generateElement(tagName, klasses, id);
+    this.el.setAttribute('contenteditable', true);
+  },
+  insertHTML: function($where) {
+    $where.append(this.el);
+  },
+  value: function() {
+    return this.el.textContent;
   }
 }
 
 var blank = Object.create(PopoutEditable);
 var field = Object.create(PopoutEditorField);
-// console.log(field.render());
 
-blank.fields.push(Object.create(PopoutEditorField));
 
-blank.fields.push(Object.create(PopoutEditorField));
+ContentSection = {
+  id: 0, // id number, given as argument to init.
+  fields: {
+    // contentType: 'blah', // InlineEditable
+    // contentTitle: 'Blah', // InlineEditable
+    // contentImage: Object.create(PopoutEditable),
+    // contentBlurb: 'paragraph', // InlineEditable
+    // contentLink: Object.create(PopoutEditable)
+  },
 
-blank.fields.push(Object.create(PopoutEditorField));
+  init: function(id) {
+    // generates each field in fields as a placeholder.
+    /*
+      Arguments:
+        id (Int): the integer to be used as this section's id.
+    */
+    id = Number(id);
+    if (isNaN(id)) {
+      return False;
+    }
+    this.id = id;
+    this.idString = 'section' + String(this.id) + '_';
+    this.addInlineField('contentType', 'h2');
+    this.addInlineField('contentTitle', 'h1');
+    this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, ['URL', 'Title', 'Alt Text']);
+    this.addInlineField('contentBlurb', 'div');
+    this.addPopoutField('contentLink', 'div', PLACEHOLDER_BLURB, ['URL', 'Text']);
+  },
+  addInlineField: function(fieldName, tagName) {
+    this[fieldName] = Object.create(InlineEditable);
+    this[fieldName].generateField(tagName, [], this.idString + fieldName);
+  },
+  addPopoutField: function(fieldName, tagName, placeholder, popoutFields) {
+    this[fieldName] = Object.create(PopoutEditable);
+    this[fieldName].init(tagName, placeholder, this.idString + fieldName);
+    for (let field of popoutFields) {
+      this[fieldName].addField(field);
+    }
+  },
+  render: function($where) {
+    var ctn = document.createElement('div');
+    this.contentType.insertHTML(ctn);
+    this.contentTitle.insertHTML(ctn);
+    this.contentImage.insertHTML(ctn);
+    this.contentBlurb.insertHTML(ctn);
+    this.contentLink.insertHTML(ctn);
+    $where.append(ctn);
+  }
 
-blank.fields.push(Object.create(PopoutEditorField));
+}
+
+EmailGenerator = {
+  container: document.getElementById('emailContent'), // The div containing the content to be pasted into GRS
+  sections: {
+    introduction: 'paragraph', // InlineEditable
+    contentSections: [ContentSection] // Array of ContentSections
+  },
+  init: function() {
+    // find the email container in the document, generate first content section,
+    // get everything good to go.
+  },
+
+  copyToClipboard: function() {
+    // Copy the content of the email to the clipboard for easy pasting into GRS.
+  }
+}
+
+
+
+
+
 
 var imgEdit = document.getElementById('imgEdit0');
 var linkEdit = document.getElementById('linkEdit0');
