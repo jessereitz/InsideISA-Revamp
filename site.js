@@ -29,7 +29,9 @@ function generateElement(tagName, klasses, id) {
     return False;
   }
   var el = document.createElement(tagName);
-  el.id = id;
+  if (id) {
+    el.setAttribute('id', id);
+  }
   if (klasses) {
     for (let klass of klasses) {
       el.classList.add(klass);
@@ -140,24 +142,37 @@ var PopoutEditable = {
     if (ctnKlass) {
       ctnKlasses.push(ctnKlass);
     }
-    var ctn = generateElement('a', ctnKlass);
-    ctn.href = '#';
+    var editCtn = generateElement('a', ctnKlass);
+    editCtn.href = '#';
     var text = generateElement('div');
     text.textContent = 'edit';
     text.classList.add(ctnKlass + '__text')
-    ctn.append(text);
-    ctn.append(this.el);
-    if ($where && $where instanceof Element) {
-      $where.append(ctn);
+    editCtn.append(text);
+    if (this.ctn) {
+      this.ctn.append(this.el);
+      var el = this.ctn;
     } else {
-      return ctn;
+      var el = this.el;
+    }
+    editCtn.append(el);
+
+    if ($where && $where instanceof Element) {
+      $where.append(editCtn);
+    } else {
+      return editCtn;
     }
   },
   renderFinal: function($where) {
-    if ($where && $where instanceof Element) {
-      $where.append(this.el);
+    if (this.ctn) {
+      this.ctn.append(this.el);
+      var el = this.ctn;
     } else {
-      return this.el;
+      var el = this.el;
+    }
+    if ($where && $where instanceof Element) {
+      $where.append(el);
+    } else {
+      return el;
     }
   }
 }
@@ -180,7 +195,7 @@ var InlineEditable = {
       this.el.setAttribute('style', style);
     }
   },
-  render: function($where) {
+  insertOrReturnHTML: function($where) {
     if ($where && $where instanceof Element) {
       $where.append(this.el);
     } else {
@@ -190,12 +205,12 @@ var InlineEditable = {
   renderEditable: function($where) {
     this.el.classList.add('editable');
     this.el.setAttribute('contenteditable', true);
-    return this.render($where);
+    return this.insertOrReturnHTML($where);
   },
   renderFinal: function($where) {
     this.el.classList.remove('editable');
     this.el.removeAttribute('contenteditable');
-    return this.render($where);
+    return this.insertOrReturnHTML($where);
   },
   value: function() {
     return this.el.textContent;
@@ -249,13 +264,21 @@ ContentSection = {
     this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, ['URL', 'Title', 'Alt Text'], CONTENT_IMG_STYLE);
   },
   addLinkField: function() {
-    this.addPopoutField('contentLink', 'span', PLACEHOLDER_LINK, ['URL', 'Text'], CONTENT_LINK_STYLE);
-    // this['contentLink'].
+    this.addPopoutField('contentLink', 'a', PLACEHOLDER_LINK, ['URL', 'Text'], CONTENT_LINK_STYLE);
+    var ctn = generateElement('div');
+    ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
+    this['contentLink'].ctn = ctn;
+    // this['contentLink'].renderEditableWithCtn =
   },
   renderEditable: function($where) {
     var ctn = document.createElement('tr');
-    this.contentType.renderEditable(ctn);
-    this.contentTitle.renderEditable(ctn);
+    var innerCtn = document.createElement('td');
+    innerCtn.setAttribute('style', TD_CTN_STYLE);
+    var headingCtn = document.createElement('div');
+    headingCtn.setAttribute('style', CONTENT_HEADING_CTN_STYLE);
+    headingCtn.append(this.contentType.renderEditable());
+    headingCtn.append(this.contentTitle.renderEditable());
+    ctn.append(headingCtn);
     this.contentImage.renderEditable(ctn,['imgEdit']);
     this.contentBlurb.renderEditable(ctn);
     this.contentLink.renderEditable(ctn, ['linkEdit']);
