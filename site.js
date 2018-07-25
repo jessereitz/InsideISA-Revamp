@@ -1,5 +1,8 @@
+const PLACEHOLDER_TYPE = "Content Type";
+const PLACEHOLDER_TITLE = "Content Title";
 const PLACEHOLDER_IMG = './images/placeholder.gif';
 const PLACEHOLDER_BLURB = "This is the blurb";
+const PLACEHOLDER_LINK = "Learn More";
 
 /////////////////////////////
 /////     UTILITIES     /////
@@ -10,10 +13,11 @@ function generateElement(tagName, klasses, id) {
   }
   var el = document.createElement(tagName);
   el.id = id;
-  for (let klass of klasses) {
-    el.classList.add(klass);
+  if (klasses) {
+    for (let klass of klasses) {
+      el.classList.add(klass);
+    }
   }
-
     return el;
 }
 
@@ -81,7 +85,7 @@ var PopoutEditorField = {
     $where.append(this.label);
   },
   insertDiv: function($where) {
-    this.div.insertHTML($where);
+    this.div.renderEditable($where);
   }
 }
 
@@ -113,7 +117,14 @@ var PopoutEditable = {
     field.init(fieldName);
     this.fields.push(field);
   },
-  insertHTML: function($where) {
+  renderEditable: function($where) {
+    var ctn = generateElement('a', ['popoutEdit']);
+    var text = generateElement('div');
+    ctn.append(text);
+    ctn.append(this.el);
+    $where.append(ctn);
+  },
+  renderFinal: function($where) {
     $where.append(this.el);
   }
 }
@@ -121,7 +132,7 @@ var PopoutEditable = {
 var InlineEditable = {
   // InlineEditables are elements which can be editable in-place. They are
   // essentially elements with contenteditable set to true.
-  generateField: function(tagName, klasses, id) {
+  generateField: function(tagName, klasses, id, placeholder) {
     // Creates an InlineEditable element with appropriate classes and attrs.
     if (!klasses) {
       klasses = [];
@@ -129,9 +140,22 @@ var InlineEditable = {
     klasses.push('editable');
     this.el = generateElement(tagName, klasses, id);
     this.el.setAttribute('contenteditable', true);
+    if (placeholder) {
+      this.el.textContent = placeholder;
+    }
   },
   insertHTML: function($where) {
     $where.append(this.el);
+  },
+  renderEditable: function($where) {
+    this.el.classList.add('editable');
+    this.el.setAttribute('contenteditable', true);
+    this.insertHTML($where);
+  },
+  renderFinal: function($where) {
+    this.el.classList.remove('editable');
+    this.el.removeAttribute('contenteditable');
+    this.insertHTML($where);
   },
   value: function() {
     return this.el.textContent;
@@ -164,15 +188,15 @@ ContentSection = {
     }
     this.id = id;
     this.idString = 'section' + String(this.id) + '_';
-    this.addInlineField('contentType', 'h2');
-    this.addInlineField('contentTitle', 'h1');
+    this.addInlineField('contentType', 'h2', PLACEHOLDER_TYPE);
+    this.addInlineField('contentTitle', 'h1', PLACEHOLDER_TITLE);
     this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, ['URL', 'Title', 'Alt Text']);
-    this.addInlineField('contentBlurb', 'div');
-    this.addPopoutField('contentLink', 'div', PLACEHOLDER_BLURB, ['URL', 'Text']);
+    this.addInlineField('contentBlurb', 'div', PLACEHOLDER_BLURB);
+    this.addPopoutField('contentLink', 'div', PLACEHOLDER_LINK, ['URL', 'Text']);
   },
-  addInlineField: function(fieldName, tagName) {
+  addInlineField: function(fieldName, tagName, placeholder) {
     this[fieldName] = Object.create(InlineEditable);
-    this[fieldName].generateField(tagName, [], this.idString + fieldName);
+    this[fieldName].generateField(tagName, [], this.idString + fieldName, placeholder);
   },
   addPopoutField: function(fieldName, tagName, placeholder, popoutFields) {
     this[fieldName] = Object.create(PopoutEditable);
@@ -181,13 +205,22 @@ ContentSection = {
       this[fieldName].addField(field);
     }
   },
-  render: function($where) {
+  renderEditable: function($where) {
     var ctn = document.createElement('div');
-    this.contentType.insertHTML(ctn);
-    this.contentTitle.insertHTML(ctn);
-    this.contentImage.insertHTML(ctn);
-    this.contentBlurb.insertHTML(ctn);
-    this.contentLink.insertHTML(ctn);
+    this.contentType.renderEditable(ctn);
+    this.contentTitle.renderEditable(ctn);
+    this.contentImage.renderEditable(ctn);
+    this.contentBlurb.renderEditable(ctn);
+    this.contentLink.renderEditable(ctn);
+    $where.append(ctn);
+  },
+  renderFinal: function($where) {
+    var ctn = document.createElement('div');
+    this.contentType.renderFinal(ctn);
+    this.contentTitle.renderFinal(ctn);
+    this.contentImage.renderFinal(ctn);
+    this.contentBlurb.renderFinal(ctn);
+    this.contentLink.renderFinal(ctn);
     $where.append(ctn);
   }
 
