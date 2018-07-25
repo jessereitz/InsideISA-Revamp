@@ -82,8 +82,11 @@ var PopoutEditor = {
     // $where (HTML element; req)
     // Takes an HTML element to use for display positioning. Displays the
     // PopoutEditor at the top right of the given element.
-    this.$editor.style.top = $where.offsetTop;
-    this.$editor.style.left = $where.offsetLeft + $where.offsetWidth + 25;
+    console.log($where);
+    console.log($where.offsetTop);
+    var rect = $where.getBoundingClientRect();
+    this.$editor.style.top = rect.top + window.scrollY;
+    this.$editor.style.left = rect.right + 25;
     this.$editor.classList.remove('hide');
   },
   hide: function() {
@@ -122,6 +125,7 @@ var PopoutEditable = {
     } else {
       this.el.textContent = placeholder;
     }
+    this.fields = [];
   },
   fields: [],
   insertFields: function($where) {
@@ -136,6 +140,13 @@ var PopoutEditable = {
     var field = Object.create(PopoutEditorField);
     field.init(fieldName);
     this.fields.push(field);
+  },
+  addFields: function(fields) {
+    for (let fieldName of fields) {
+      var field = Object.create(PopoutEditorField);
+      field.init(fieldName);
+      this.fields.push(field);
+    }
   },
   renderEditable: function($where, ctnKlass) {
     ctnKlasses = ['popoutEdit'];
@@ -222,7 +233,6 @@ var field = Object.create(PopoutEditorField);
 
 
 ContentSection = {
-  id: 0, // id number, given as argument to init.
   fields: {
     // contentType: 'blah', // InlineEditable
     // contentTitle: 'Blah', // InlineEditable
@@ -256,9 +266,8 @@ ContentSection = {
   addPopoutField: function(fieldName, tagName, placeholder, popoutFields, style) {
     this[fieldName] = Object.create(PopoutEditable);
     this[fieldName].init(tagName, placeholder, this.idString + fieldName, style);
-    for (let field of popoutFields) {
-      this[fieldName].addField(field);
-    }
+    this[fieldName].addFields(popoutFields);
+
   },
   addImageField: function() {
     this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, ['URL', 'Title', 'Alt Text'], CONTENT_IMG_STYLE);
