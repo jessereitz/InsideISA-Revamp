@@ -3,7 +3,8 @@
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
     <title>InsideISA Email Generator</title>
     <link href="./style.css" type="text/css" rel="stylesheet">
-    <script type="text/javascript" src="./site.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
   </head>
   <body>
     <!-- Controller -->
@@ -13,20 +14,19 @@
       <button>Add Section</button>
       <button id>Reset Content</button>
 
-      <!-- Popout Editor -->
-      <div class="smallEditor">
-        <form onsubmit="function(e) {e.preventDefault();}">
-          <label for="link">URL</label>
-          <div contenteditable="true" class="editable" name="link"> </div>
-          <label for="text">Text</label>
-          <div contenteditable="true" class="editable" name="text"> </div>
-          <input type="submit">
-        </form>
-      </div>
-
-
     </div>
     <!-- End Controller -->
+
+    <!-- Popout Editor -->
+    <div id="popoutEditor" class="popoutEditor hide">
+      <form onsubmit="function(e) {e.preventDefault();}">
+        <label for="link">URL</label>
+        <div contenteditable="true" class="editable" name="link"> </div>
+        <label for="text">Text</label>
+        <div contenteditable="true" class="editable" name="text"> </div>
+        <input type="submit" value="Save">
+      </form>
+    </div>
 
     <div class="email-preview">
       <div style="width=100%;background:white;table-layout:fixed;min-width:600px;'">
@@ -68,9 +68,6 @@
                   </tbody>
                 </table>
 
-
-
-
                 <!---------------------->
                 <!-- IsideISA Content -->
                 <!---------------------->
@@ -111,9 +108,9 @@
                             <!-- End Content Section Heading -->
 
                             <!-- Photo -->
-                            <a href="#" class="popoutEdit imgEdit">
+                            <a href="#" id="imgEdit0" class="popoutEdit imgEdit">
                               <div class="imgEdit__text">edit</div>
-                              <img contenteditable="true" alt="" src="https://studiesabroad.com/html-email-files/images/Program%20Advisors/Inside%20ISA/Bilbao/Bilbao_Guggenheim.jpg" style="max-width: 100%;  text-align: center; margin-left: auto; margin-right: auto;">
+                              <img alt="" src="https://www.foot.com/wp-content/uploads/2017/03/placeholder.gif" style="max-width: 100%;  text-align: center; margin-left: auto; margin-right: auto;">
                             </a>
                             <!-- End Photo -->
 
@@ -289,5 +286,7 @@
         </table>
       </div>
     </div>
+
+    <script type="text/javascript" src="./site.js"></script>
   </body>
 </html>
