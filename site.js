@@ -33,6 +33,11 @@ var PopoutEditor = {
     }
   },
   display: function($where) {
+    // $where (HTML element; req)
+    // Takes an HTML element to use for display positioning. Displays the
+    // PopoutEditor at the top right of the given element.
+    this.$editor.style.top = $where.offsetTop;
+    this.$editor.style.left = $where.offsetLeft + $where.offsetWidth + 25;
     this.$editor.classList.remove('hide');
   },
   hide: function() {
@@ -46,7 +51,6 @@ var PopoutEditable = {
   fields: [],
   renderFields: function() {
     var html = '';
-    console.log(this.fields);
     for (let field of this.fields) {
       // console.log(field.render());
       // html += field.render();
@@ -75,7 +79,6 @@ var PopoutEditorField = {
 
 var blank = Object.create(PopoutEditable);
 var field = Object.create(PopoutEditorField);
-console.log(field);
 // console.log(field.render());
 
 blank.fields.push(Object.create(PopoutEditorField));
@@ -86,4 +89,6 @@ blank.fields.push(Object.create(PopoutEditorField));
 
 blank.fields.push(Object.create(PopoutEditorField));
 
-console.log(blank.renderFields());
+var imgEdit = document.getElementById('imgEdit0');
+var linkEdit = document.getElementById('linkEdit0');
+var editor = PopoutEditor;
