@@ -308,10 +308,10 @@ ContentSection = {
     this.id = id;
     this.idString = 'section' + String(this.id) + '_';
     this.createCtns();
-    this.addInlineField('contentType', 'h2', PLACEHOLDER_TYPE, CONTENT_TYPE_STYLE);
-    this.addInlineField('contentTitle', 'h1', PLACEHOLDER_TITLE, CONTENT_TITLE_STYLE);
+    this.addInlineField('contentType', 'h2', PLACEHOLDER_TYPE + ' ' + this.id, CONTENT_TYPE_STYLE);
+    this.addInlineField('contentTitle', 'h1', PLACEHOLDER_TITLE + ' ' + this.id, CONTENT_TITLE_STYLE);
     this.addImageField();
-    this.addInlineField('contentBlurb', 'div', PLACEHOLDER_BLURB, CONTENT_BLURB_STYLE);
+    this.addInlineField('contentBlurb', 'div', PLACEHOLDER_BLURB + ' ' + this.id, CONTENT_BLURB_STYLE);
     this.addLinkField();
 
   },
@@ -344,7 +344,7 @@ ContentSection = {
     });
   },
   addLinkField: function() {
-    this.addPopoutField('contentLink', 'a', PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
+    this.addPopoutField('contentLink', 'a', PLACEHOLDER_LINK + ' ' + this.id, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
     var ctn = generateElement('div');
     ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
     this['contentLink'].ctn = ctn;
@@ -412,7 +412,7 @@ EmailGenerator = {
   generateSection: function() {
     var section = Object.create(ContentSection);
     // debugger;
-    section.init(this.contentSections.length);
+    section.init(this.contentSections.length + 1);
     this.contentSections.push(section);
     this.contentSectionsCtn.insertBefore(section.renderEditable(), this.bottomBtns);
   },
