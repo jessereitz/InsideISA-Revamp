@@ -65,12 +65,15 @@ var PopoutEditor = {
     this.$editor = document.getElementById("popoutEditor");
     this.$form = this.$editor.getElementsByTagName('form')[0];
     this.$saveBtn = this.$form.querySelector('#popoutSave');
+    this.$cancelBtn = this.$form.querySelector('#popoutCancel');
     this.fields = [];
     this.handler;
     this.hide();
-    this.$form.addEventListener('submit', this.defaultSubmitHandler.bind(this));
+    this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
+    this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
+    document.addEventListener('click', this.defaultOffClickHandler.bind(this));
   },
-  setup: function(fields, saveHandler) {
+  setup: function(editable, saveHandler) {
     // sets up the PopoutEditor for use.
     // fields is Array of PopoutEditorField
     // saveHandler is Function to be called when the save button is pressed.
@@ -83,10 +86,14 @@ var PopoutEditor = {
       }
 
     }
-    if (fields) {
-      this.fields = fields;
-    } else {
-      this.fields = [];
+    if (editable) {
+      this.editable = editable;
+      if (this.editable.fields) {
+        this.fields = this.editable.fields;
+      } else {
+        this.fields = [];
+      }
+
     }
     for (let field of this.fields) {
       this.$form.insertBefore(field.insertLabel(), this.$saveBtn);
@@ -118,9 +125,14 @@ var PopoutEditor = {
       this.$form.removeChild(field.div.el);
     }
   },
-  defaultSubmitHandler: function (e) {
+  defaultHideHandler: function(e) {
     e.preventDefault();
     this.hide();
+  },
+  defaultOffClickHandler: function(e) {
+    if (!this.hidden && (!this.$editor.contains(e.target) && !this.editable.wasClicked(e))) {
+      this.hide();
+    }
   }
 }
 
@@ -231,17 +243,13 @@ var PopoutEditable = {
   },
   clickHandler: function(e) {
     e.preventDefault();
-    if (PopoutEditor.hidden) {
-      var right = this.outerCtn.getBoundingClientRect();
-      right = right.right + 25;
-      var top = this.el.getBoundingClientRect();
-      top = top.top + window.scrollY;
-      // debugger;
-      PopoutEditor.setup(this.fields, this.saveHandler);
-      PopoutEditor.display(right, top);
-    } else {
-      PopoutEditor.hide();
-    }
+    var right = this.outerCtn.getBoundingClientRect();
+    right = right.right + 25;
+    var top = this.el.getBoundingClientRect();
+    top = top.top + window.scrollY;
+    // debugger;
+    PopoutEditor.setup(this, this.saveHandler);
+    PopoutEditor.display(right, top);
   },
   setSaveHandler: function(func) {
     this.saveHandler = func.bind(this);
@@ -251,6 +259,10 @@ var PopoutEditable = {
       return el.div.id === fieldName;
     });
     return field.getValue();
+  },
+  wasClicked: function(e) {
+    var clicked = this.editCtn.contains(e.target);
+    return clicked;
   }
 }
 
@@ -452,7 +464,7 @@ var section = Object.create(ContentSection);
 function setup() {
   section.init(0);
   PopoutEditor.init();
-  PopoutEditor.setup(section.contentImage.fields);
+  PopoutEditor.setup(section.contentImage);
   ctn.insertBefore(section.renderEditable(), bottomBtns);
 }
 
