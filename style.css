@@ -154,6 +154,9 @@ body {
 }
 
 .linkEdit__text {
+  position: absolute;
+  right: 1rem;
+  top: 0.5em;
   margin-left: 1.5rem;
   color: rgba(0,0,0,0);
   transition: color 0.2s;
