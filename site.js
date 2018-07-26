@@ -307,11 +307,12 @@ ContentSection = {
     }
     this.id = id;
     this.idString = 'section' + String(this.id) + '_';
+    this.placeholderStart = "Section " + this.id + " ";
     this.createCtns();
-    this.addInlineField('contentType', 'h2', PLACEHOLDER_TYPE + ' ' + this.id, CONTENT_TYPE_STYLE);
-    this.addInlineField('contentTitle', 'h1', PLACEHOLDER_TITLE + ' ' + this.id, CONTENT_TITLE_STYLE);
+    this.addInlineField('contentType', 'h2', this.placeholderStart + PLACEHOLDER_TYPE, CONTENT_TYPE_STYLE);
+    this.addInlineField('contentTitle', 'h1', this.placeholderStart + PLACEHOLDER_TITLE, CONTENT_TITLE_STYLE);
     this.addImageField();
-    this.addInlineField('contentBlurb', 'div', PLACEHOLDER_BLURB + ' ' + this.id, CONTENT_BLURB_STYLE);
+    this.addInlineField('contentBlurb', 'div', this.placeholderStart + PLACEHOLDER_BLURB, CONTENT_BLURB_STYLE);
     this.addLinkField();
 
   },
@@ -344,7 +345,7 @@ ContentSection = {
     });
   },
   addLinkField: function() {
-    this.addPopoutField('contentLink', 'a', PLACEHOLDER_LINK + ' ' + this.id, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
+    this.addPopoutField('contentLink', 'a', this.placeholderStart + PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
     var ctn = generateElement('div');
     ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
     this['contentLink'].ctn = ctn;
@@ -389,11 +390,6 @@ ContentSection = {
 }
 
 EmailGenerator = {
-  container: document.getElementById('contentSectionsCtn'), // The div containing the content to be pasted into GRS
-  sections: {
-    introduction: 'paragraph', // InlineEditable
-    contentSections: [ContentSection] // Array of ContentSections
-  },
   init: function() {
     // find the email container in the document, generate first content section,
     // get everything good to go.
