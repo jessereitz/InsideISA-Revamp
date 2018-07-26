@@ -66,6 +66,7 @@ var PopoutEditor = {
     this.$saveBtn = this.$form.querySelector('#popoutSave');
     this.fields = [];
     this.handler;
+    this.hide();
   },
   setup: function(fields, saveHandler) {
     // sets up the PopoutEditor for use.
@@ -92,12 +93,13 @@ var PopoutEditor = {
     // Takes an HTML element to use for display positioning. Displays the
     // PopoutEditor at the top right of the given element.
     this.$editor.style.top = yPos;
-    this.$editor.style.left = xPos;
-
+    this.$editor.style.left = xPos
     this.$editor.classList.remove('hide');
+    this.hidden = false;
   },
   hide: function() {
     this.$editor.classList.add('hide');
+    this.hidden = true;
     for (let field of this.fields) {
       this.$form.removeChild(field.label);
       this.$form.removeChild(field.div.el);
@@ -150,6 +152,8 @@ var PopoutEditable = {
     text.classList.add(ctnKlass + '__text')
     this.editCtn.append(text);
     this.outerCtn = outerCtn;
+
+    this.editCtn.addEventListener('click', this.clickHandler.bind(this));
   },
   fields: [],
   insertFields: function($where) {
@@ -204,13 +208,18 @@ var PopoutEditable = {
       return el;
     }
   },
-  displayPopout: function() {
-    var right = this.outerCtn.getBoundingClientRect();
-    right = right.right + 25;
-    var top = this.el.getBoundingClientRect();
-    top = top.top + window.scrollY;
-    PopoutEditor.setup(this.fields);
-    PopoutEditor.display(right, top);
+  clickHandler: function(e) {
+    e.preventDefault();
+    if (PopoutEditor.hidden) {
+      var right = this.outerCtn.getBoundingClientRect();
+      right = right.right + 25;
+      var top = this.el.getBoundingClientRect();
+      top = top.top + window.scrollY;
+      PopoutEditor.setup(this.fields);
+      PopoutEditor.display(right, top);
+    } else {
+      PopoutEditor.hide();
+    }
   }
 }
 
