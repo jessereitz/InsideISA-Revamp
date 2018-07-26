@@ -67,11 +67,21 @@ var PopoutEditor = {
     this.fields = [];
     this.handler;
     this.hide();
+    this.$form.addEventListener('submit', this.defaultSubmitHandler.bind(this));
   },
   setup: function(fields, saveHandler) {
     // sets up the PopoutEditor for use.
     // fields is Array of PopoutEditorField
     // saveHandler is Function to be called when the save button is pressed.
+    for (let field of this.fields) {
+      if (this.$form.contains(field.label)) {
+        this.$form.removeChild(field.label);
+      }
+      if (this.$form.contains(field.div.el)) {
+        this.$form.removeChild(field.div.el);
+      }
+
+    }
     if (fields) {
       this.fields = fields;
     } else {
@@ -83,7 +93,8 @@ var PopoutEditor = {
     }
 
     if (saveHandler) {
-      this.handler = saveHandler;
+      this.saveHandler = saveHandler;
+      this.$form.addEventListener('submit', this.saveHandler);
     } else {
       this.handler = undefined;
     }
@@ -100,12 +111,18 @@ var PopoutEditor = {
   hide: function() {
     this.$editor.classList.add('hide');
     this.hidden = true;
+    this.$saveBtn.removeEventListener('submit', this.saveHandler);
     for (let field of this.fields) {
       this.$form.removeChild(field.label);
       this.$form.removeChild(field.div.el);
     }
+  },
+  defaultSubmitHandler: function (e) {
+    e.preventDefault();
+    this.hide();
   }
 }
+
 
 var PopoutEditorField = {
   init: function(fieldName) {
@@ -126,6 +143,9 @@ var PopoutEditorField = {
   },
   insertDiv: function($where) {
     return this.div.renderEditable($where);
+  },
+  getValue: function() {
+    return this.div.value();
   }
 }
 
@@ -215,11 +235,21 @@ var PopoutEditable = {
       right = right.right + 25;
       var top = this.el.getBoundingClientRect();
       top = top.top + window.scrollY;
-      PopoutEditor.setup(this.fields);
+      // debugger;
+      PopoutEditor.setup(this.fields, this.saveHandler);
       PopoutEditor.display(right, top);
     } else {
       PopoutEditor.hide();
     }
+  },
+  setSaveHandler: function(func) {
+    this.saveHandler = func.bind(this);
+  },
+  getValue: function(fieldName) {
+    var field = this.fields.find(function (el) {
+      return el.div.id === fieldName;
+    });
+    return field.getValue();
   }
 }
 
@@ -308,16 +338,26 @@ ContentSection = {
   },
   addImageField: function() {
     this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, CONTENT_IMG_FIELDS, CONTENT_IMG_STYLE, 'imgEdit');
-    this.contentImage.saveHandler = function () {
-      var urlField = this.fields.find(function (el) {el.div.id = 'URL'});
-      var titleField = this.fields.find(function (el) {el.div.textContent;})
-    }
+    this.contentImage.setSaveHandler(function (e) {
+      e.preventDefault();
+      var url = this.getValue('URL');
+      var title = this.getValue('Title');
+      var alt = this.getValue('Alt Text');
+      this.el.src = url;
+      this.el.title = title;
+      this.el.alt = alt;
+    });
   },
   addLinkField: function() {
     this.addPopoutField('contentLink', 'a', PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
     var ctn = generateElement('div');
     ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
     this['contentLink'].ctn = ctn;
+    this.contentLink.setSaveHandler(function (e) {
+      e.preventDefault();
+      this.el.href = this.getValue('URL');
+      this.el.textContent = this.getValue('Text');
+    })
   },
   createCtns: function() {
     this.ctn = document.createElement('tr');
