@@ -13,6 +13,7 @@ const CONTENT_LINK_STYLE = "color: inherit; text-decoration: none;";
 //////////////////////////////////////
 /////     TEXT PLACEHOLDERS     //////
 //////////////////////////////////////
+const PLACEHOLDER_INTRO = "Enter your introduction here!"
 const PLACEHOLDER_TYPE = "Content Type";
 const PLACEHOLDER_TITLE = "Content Title";
 const PLACEHOLDER_IMG = './images/placeholder.gif';
@@ -293,19 +294,7 @@ var InlineEditable = {
   }
 }
 
-var blank = Object.create(PopoutEditable);
-var field = Object.create(PopoutEditorField);
-
-
 ContentSection = {
-  fields: {
-    // contentType: 'blah', // InlineEditable
-    // contentTitle: 'Blah', // InlineEditable
-    // contentImage: Object.create(PopoutEditable),
-    // contentBlurb: 'paragraph', // InlineEditable
-    // contentLink: Object.create(PopoutEditable)
-  },
-
   init: function(id) {
     // generates each field in fields as a placeholder.
     /*
@@ -388,7 +377,7 @@ ContentSection = {
 }
 
 EmailGenerator = {
-  container: document.getElementById('emailContent'), // The div containing the content to be pasted into GRS
+  container: document.getElementById('contentSectionsCtn'), // The div containing the content to be pasted into GRS
   sections: {
     introduction: 'paragraph', // InlineEditable
     contentSections: [ContentSection] // Array of ContentSections
@@ -396,6 +385,24 @@ EmailGenerator = {
   init: function() {
     // find the email container in the document, generate first content section,
     // get everything good to go.
+    this.contentSections = [];
+    this.container = document.getElementById('contentSectionsCtn');
+    this.contentSectionsCtn = document.getElementById('contentSectionsCtn');
+    this.bottomBtns = document.getElementById('bottomBtns');
+    this.generateIntroduction();
+    this.generateSection();
+  },
+  generateIntroduction: function() {
+    this.introduction = Object.create(InlineEditable);
+    this.introduction.generateField('p', [], 'introPara', PLACEHOLDER_INTRO);
+    this.introduction.renderEditable(document.getElementById('introCtn'));
+  },
+  generateSection: function() {
+    var section = Object.create(ContentSection);
+    // debugger;
+    section.init(this.contentSections.length);
+    this.contentSections.push(section);
+    this.contentSectionsCtn.insertBefore(section.renderEditable(), this.bottomBtns);
   },
 
   copyToClipboard: function() {
@@ -403,7 +410,11 @@ EmailGenerator = {
   }
 }
 
-
+var addSectionBtn = document.getElementById('addSectionBtn');
+addSectionBtn.addEventListener('click', function (e) {
+  e.preventDefault();
+  EmailGenerator.generateSection()
+});
 
 
 
