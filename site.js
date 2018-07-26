@@ -332,9 +332,15 @@ ContentSection = {
       var url = this.getValue('URL');
       var title = this.getValue('Title');
       var alt = this.getValue('Alt Text');
-      this.el.src = url;
-      this.el.title = title;
-      this.el.alt = alt;
+      if (url) {
+        this.el.src = url;
+      }
+      if (title) {
+        this.el.title = title;
+      }
+      if (alt) {
+        this.el.alt = alt;
+      }
     });
   },
   addLinkField: function() {
@@ -344,8 +350,14 @@ ContentSection = {
     this['contentLink'].ctn = ctn;
     this.contentLink.setSaveHandler(function (e) {
       e.preventDefault();
-      this.el.href = this.getValue('URL');
-      this.el.textContent = this.getValue('Text');
+      var href = this.getValue('URL');
+      var text = this.getValue('Text');
+      if (href) {
+        this.el.href = href;
+      }
+      if (text) {
+        this.el.textContent = text;
+      }
     })
   },
   createCtns: function() {
@@ -410,15 +422,30 @@ EmailGenerator = {
   }
 }
 
-var addSectionBtn = document.getElementById('addSectionBtn');
-addSectionBtn.addEventListener('click', function (e) {
-  e.preventDefault();
-  EmailGenerator.generateSection()
-});
+var Controller = {
+  init: function() {
+    this.copyCodeBtn = document.getElementById('copyCodeBtn');
+    this.addSectionBtn = document.getElementById('addSectionBtn');
+    this.startOverBtn = document.getElementById('startoverBtn');
 
+    this.copyCodeBtn.addEventListener('click', this.copyCodeHandler.bind(this));
+    this.addSectionBtn.addEventListener('click', this.addSectionHandler.bind(this));
+    this.startOverBtn.addEventListener('click', this.startOverHandler.bind(this));
+  },
 
-
-
+  copyCodeHandler: function(e) {
+    e.preventDefault();
+    return null;
+  },
+  addSectionHandler: function(e) {
+    e.preventDefault();
+    EmailGenerator.generateSection();
+  },
+  startOverHandler: function(e) {
+    e.preventDefault();
+    location.reload();
+  }
+}
 var imgEdit = document.getElementById('imgEdit0');
 var linkEdit = document.getElementById('linkEdit0');
 var editor = PopoutEditor;
@@ -437,3 +464,9 @@ function displayPopout() {
   var img = document.getElementById('section0_contentImage');
   PopoutEditor.display(img);
 }
+
+document.addEventListener('DOMContentLoaded', function(e) {
+  EmailGenerator.init();
+  PopoutEditor.init();
+  Controller.init();
+});
