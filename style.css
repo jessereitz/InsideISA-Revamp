@@ -94,7 +94,7 @@ body {
   border-color: Highlight;
 }
 
-.popoutEditor label {
+.Editor label {
   display: inline-block;
   margin-top: 1em;
   font-size: small;
@@ -108,11 +108,18 @@ body {
   overflow: auto;
   margin: 0 auto;
 }
-.editable {
+.editable,
+.popoutEdit {
   border: 2px solid rgba(0,0,0,0);
   transition: border-color 0.2s;
 }
-.editable:hover {
+
+.editable:hover,
+.popoutEdit:hover {
+  border: 2px solid Highlight;
+}
+
+.popoutEdit--focus {
   border: 2px solid Highlight;
 }
 

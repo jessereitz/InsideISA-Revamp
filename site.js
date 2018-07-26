@@ -119,6 +119,7 @@ var PopoutEditor = {
   hide: function() {
     this.$editor.classList.add('hide');
     this.hidden = true;
+    this.editable ? this.editable.clickOffHandler() : this.editable = null;
     this.$saveBtn.removeEventListener('submit', this.saveHandler);
     for (let field of this.fields) {
       this.$form.removeChild(field.label);
@@ -243,6 +244,7 @@ var PopoutEditable = {
   },
   clickHandler: function(e) {
     e.preventDefault();
+    this.editCtn.classList.add('popoutEdit--focus');
     var right = this.outerCtn.getBoundingClientRect();
     right = right.right + 25;
     var top = this.el.getBoundingClientRect();
@@ -253,6 +255,9 @@ var PopoutEditable = {
   },
   setSaveHandler: function(func) {
     this.saveHandler = func.bind(this);
+  },
+  clickOffHandler: function() {
+    this.editCtn.classList.remove('popoutEdit--focus');
   },
   getValue: function(fieldName) {
     var field = this.fields.find(function (el) {
