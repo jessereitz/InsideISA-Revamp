@@ -446,7 +446,7 @@ EmailGenerator = {
     this.contentSectionsCtn.insertBefore(section.renderEditable(), this.bottomBtns);
   },
   deleteContentSection: function(sectionId) {
-    var section = this.contentSections.filter(function(el) {return el.id === sectionId});
+    var section = this.contentSections.splice(sectionId-1, 1);
     delete section;
   },
   copyToClipboard: function() {
