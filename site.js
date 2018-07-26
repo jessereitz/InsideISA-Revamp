@@ -19,6 +19,9 @@ const PLACEHOLDER_IMG = './images/placeholder.gif';
 const PLACEHOLDER_BLURB = "This is the blurb";
 const PLACEHOLDER_LINK = "Learn More";
 
+// FIELDS
+const CONTENT_IMG_FIELDS = ['URL', 'Title', 'Alt Text'];
+const CONTENT_LINK_FIELDS = ['URL', 'Text'];
 
 
 /////////////////////////////
@@ -60,6 +63,7 @@ var PopoutEditor = {
     // initializes the PopoutEditor by finding the editor on DOM.
     this.$editor = document.getElementById("popoutEditor");
     this.$form = this.$editor.getElementsByTagName('form')[0];
+    this.$saveBtn = this.$form.querySelector('#popoutSave');
     this.fields = [];
     this.handler;
   },
@@ -72,25 +76,32 @@ var PopoutEditor = {
     } else {
       this.fields = [];
     }
+    for (let field of this.fields) {
+      this.$form.insertBefore(field.insertLabel(), this.$saveBtn);
+      this.$form.insertBefore(field.insertDiv(), this.$saveBtn);
+    }
+
     if (saveHandler) {
       this.handler = saveHandler;
     } else {
       this.handler = undefined;
     }
   },
-  display: function($where) {
+  display: function(xPos, yPos) {
     // $where (HTML element; req)
     // Takes an HTML element to use for display positioning. Displays the
     // PopoutEditor at the top right of the given element.
-    console.log($where);
-    console.log($where.offsetTop);
-    var rect = $where.getBoundingClientRect();
-    this.$editor.style.top = rect.top + window.scrollY;
-    this.$editor.style.left = rect.right + 25;
+    this.$editor.style.top = yPos;
+    this.$editor.style.left = xPos;
+
     this.$editor.classList.remove('hide');
   },
   hide: function() {
     this.$editor.classList.add('hide');
+    for (let field of this.fields) {
+      this.$form.removeChild(field.label);
+      this.$form.removeChild(field.div.el);
+    }
   }
 }
 
@@ -104,10 +115,15 @@ var PopoutEditorField = {
     this.label.textContent = fieldName;
   },
   insertLabel: function($where) {
-    $where.append(this.label);
+    if ($where && $where instanceof Element) {
+        $where.append(this.label);
+    } else {
+      return this.label;
+    }
+
   },
   insertDiv: function($where) {
-    this.div.renderEditable($where);
+    return this.div.renderEditable($where);
   }
 }
 
@@ -117,7 +133,7 @@ var PopoutEditable = {
   // PopoutEditables are elements which have multiple fields of information
   // which must be supplied. These elements use the PopoutEditor to supply all
   // the pertinent information.
-  init: function(tagName, placeholder, id, style) {
+  init: function(tagName, placeholder, id, style, ctnKlass, outerCtn) {
     this.el = generateElement(tagName, [], id);
     this.el.setAttribute('style', style)
     if (tagName === 'img') {
@@ -126,6 +142,14 @@ var PopoutEditable = {
       this.el.textContent = placeholder;
     }
     this.fields = [];
+
+    this.editCtn = generateElement('a', [ctnKlass, 'popoutEdit']);
+    this.editCtn.href = '#';
+    var text = generateElement('div');
+    text.textContent = 'edit';
+    text.classList.add(ctnKlass + '__text')
+    this.editCtn.append(text);
+    this.outerCtn = outerCtn;
   },
   fields: [],
   insertFields: function($where) {
@@ -153,22 +177,16 @@ var PopoutEditable = {
     if (ctnKlass) {
       ctnKlasses.push(ctnKlass);
     }
-    var editCtn = generateElement('a', ctnKlass);
-    editCtn.href = '#';
-    var text = generateElement('div');
-    text.textContent = 'edit';
-    text.classList.add(ctnKlass + '__text')
-    editCtn.append(text);
     if (this.ctn) {
       this.ctn.append(this.el);
       var el = this.ctn;
     } else {
       var el = this.el;
     }
-    editCtn.append(el);
+    this.editCtn.append(el);
 
     if ($where && $where instanceof Element) {
-      $where.append(editCtn);
+      $where.append(this.editCtn);
     } else {
       return editCtn;
     }
@@ -185,6 +203,14 @@ var PopoutEditable = {
     } else {
       return el;
     }
+  },
+  displayPopout: function() {
+    var right = this.outerCtn.getBoundingClientRect();
+    right = right.right + 25;
+    var top = this.el.getBoundingClientRect();
+    top = top.top + window.scrollY;
+    PopoutEditor.setup(this.fields);
+    PopoutEditor.display(right, top);
   }
 }
 
@@ -253,59 +279,61 @@ ContentSection = {
     }
     this.id = id;
     this.idString = 'section' + String(this.id) + '_';
+    this.createCtns();
     this.addInlineField('contentType', 'h2', PLACEHOLDER_TYPE, CONTENT_TYPE_STYLE);
     this.addInlineField('contentTitle', 'h1', PLACEHOLDER_TITLE, CONTENT_TITLE_STYLE);
     this.addImageField();
     this.addInlineField('contentBlurb', 'div', PLACEHOLDER_BLURB, CONTENT_BLURB_STYLE);
     this.addLinkField();
+
   },
   addInlineField: function(fieldName, tagName, placeholder, style) {
     this[fieldName] = Object.create(InlineEditable);
     this[fieldName].generateField(tagName, [], this.idString + fieldName, placeholder, style);
   },
-  addPopoutField: function(fieldName, tagName, placeholder, popoutFields, style) {
+  addPopoutField: function(fieldName, tagName, placeholder, popoutFields, style, ctnKlass) {
     this[fieldName] = Object.create(PopoutEditable);
-    this[fieldName].init(tagName, placeholder, this.idString + fieldName, style);
+    this[fieldName].init(tagName, placeholder, this.idString + fieldName, style, ctnKlass, this.ctn);
     this[fieldName].addFields(popoutFields);
 
   },
   addImageField: function() {
-    this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, ['URL', 'Title', 'Alt Text'], CONTENT_IMG_STYLE);
+    this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, CONTENT_IMG_FIELDS, CONTENT_IMG_STYLE, 'imgEdit');
+    this.contentImage.saveHandler = function () {
+      var urlField = this.fields.find(function (el) {el.div.id = 'URL'});
+      var titleField = this.fields.find(function (el) {el.div.textContent;})
+    }
   },
   addLinkField: function() {
-    this.addPopoutField('contentLink', 'a', PLACEHOLDER_LINK, ['URL', 'Text'], CONTENT_LINK_STYLE);
+    this.addPopoutField('contentLink', 'a', PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
     var ctn = generateElement('div');
     ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
     this['contentLink'].ctn = ctn;
-    // this['contentLink'].renderEditableWithCtn =
+  },
+  createCtns: function() {
+    this.ctn = document.createElement('tr');
+    this.innerCtn = document.createElement('td');
+    this.innerCtn.setAttribute('style', TD_CTN_STYLE);
+    this.headingCtn = document.createElement('div');
+    this.headingCtn.setAttribute('style', CONTENT_HEADING_CTN_STYLE);
+    this.innerCtn.append(this.headingCtn);
+    this.ctn.append(this.innerCtn);
   },
   renderEditable: function($where) {
-    var ctn = document.createElement('tr');
-    var innerCtn = document.createElement('td');
-    innerCtn.setAttribute('style', TD_CTN_STYLE);
-    var headingCtn = document.createElement('div');
-    headingCtn.setAttribute('style', CONTENT_HEADING_CTN_STYLE);
-    headingCtn.append(this.contentType.renderEditable());
-    headingCtn.append(this.contentTitle.renderEditable());
-    ctn.append(headingCtn);
-    this.contentImage.renderEditable(ctn,['imgEdit']);
-    this.contentBlurb.renderEditable(ctn);
-    this.contentLink.renderEditable(ctn, ['linkEdit']);
-    return ctn;
+    this.headingCtn.append(this.contentType.renderEditable());
+    this.headingCtn.append(this.contentTitle.renderEditable());
+    this.contentImage.renderEditable(this.innerCtn);
+    this.contentBlurb.renderEditable(this.innerCtn);
+    this.contentLink.renderEditable(this.innerCtn);
+    return this.ctn;
   },
   renderFinal: function($where) {
-    var ctn = document.createElement('tr');
-    var innerCtn = document.createElement('td');
-    innerCtn.setAttribute('style', TD_CTN_STYLE);
-    var headingCtn = document.createElement('div');
-    headingCtn.setAttribute('style', CONTENT_HEADING_CTN_STYLE);
-    headingCtn.append(this.contentType.renderFinal());
-    headingCtn.append(this.contentTitle.renderFinal());
-    ctn.append(headingCtn);
-    this.contentImage.renderFinal(ctn);
-    this.contentBlurb.renderFinal(ctn);
-    this.contentLink.renderFinal(ctn);
-    return ctn;
+    this.headingCtn.append(this.contentType.renderFinal());
+    this.headingCtn.append(this.contentTitle.renderFinal());
+    this.contentImage.renderFinal(this.innerCtn);
+    this.contentBlurb.renderFinal(this.innerCtn);
+    this.contentLink.renderFinal(this.innerCtn);
+    return this.ctn;
   }
 
 }
@@ -337,3 +365,15 @@ var editor = PopoutEditor;
 
 var ctn = document.getElementById('contentSectionsCtn');
 var bottomBtns = document.getElementById('bottomBtns');
+var section = Object.create(ContentSection);
+function setup() {
+  section.init(0);
+  PopoutEditor.init();
+  PopoutEditor.setup(section.contentImage.fields);
+  ctn.insertBefore(section.renderEditable(), bottomBtns);
+}
+
+function displayPopout() {
+  var img = document.getElementById('section0_contentImage');
+  PopoutEditor.display(img);
+}
