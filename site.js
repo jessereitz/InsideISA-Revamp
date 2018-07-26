@@ -1,7 +1,7 @@
 ////////////////////////////////////
 /////     STYLE CONSTANTS     //////
 ////////////////////////////////////
-const TD_CTN_STYLE = "border-bottom: 3px solid #ddd;";
+const TD_CTN_STYLE = "border-bottom: 3px solid #ddd; position: relative;";
 const CONTENT_HEADING_CTN_STYLE = "margin: 20px; width: 80%;";
 const CONTENT_TYPE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 16px; margin: 0; color: #888;";
 const CONTENT_TITLE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 24px; margin: 0; margin-top: 5px; color: #333;";
@@ -312,7 +312,7 @@ var InlineEditable = {
 }
 
 ContentSection = {
-  init: function(id) {
+  init: function(id, parentGenerator) {
     // generates each field in fields as a placeholder.
     /*
       Arguments:
@@ -323,6 +323,7 @@ ContentSection = {
       return False;
     }
     this.id = id;
+    this.parentGenerator = parentGenerator;
     this.idString = 'section' + String(this.id) + '_';
     this.placeholderStart = "Section " + this.id + " ";
     this.createCtns();
@@ -386,6 +387,10 @@ ContentSection = {
     this.headingCtn.setAttribute('style', CONTENT_HEADING_CTN_STYLE);
     this.innerCtn.append(this.headingCtn);
     this.ctn.append(this.innerCtn);
+
+    if (this.id !== 1) {
+      this.generateDeleteBtn();
+    }
   },
   renderEditable: function($where) {
     this.headingCtn.append(this.contentType.renderEditable());
@@ -402,6 +407,17 @@ ContentSection = {
     this.contentBlurb.renderFinal(this.innerCtn);
     this.contentLink.renderFinal(this.innerCtn);
     return this.ctn;
+  },
+  generateDeleteBtn: function() {
+    this.deleteBtn = generateElement('button', ['contentSection__deleteBtn', 'standardBtn'], this.idString + 'deleteBtn');
+    this.deleteBtn.innerHTML = "&#215;";
+    this.deleteBtn.setAttribute('title', 'Delete Section');
+    this.deleteBtn.addEventListener('click', this.delete.bind(this));
+    this.innerCtn.append(this.deleteBtn);
+  },
+  delete: function() {
+    this.ctn.parentNode.removeChild(this.ctn);
+    this.parentGenerator.deleteContentSection(this.id);
   }
 
 }
@@ -425,11 +441,14 @@ EmailGenerator = {
   generateSection: function() {
     var section = Object.create(ContentSection);
     // debugger;
-    section.init(this.contentSections.length + 1);
+    section.init(this.contentSections.length + 1, this);
     this.contentSections.push(section);
     this.contentSectionsCtn.insertBefore(section.renderEditable(), this.bottomBtns);
   },
-
+  deleteContentSection: function(sectionId) {
+    var section = this.contentSections.filter(function(el) {return el.id === sectionId});
+    delete section;
+  },
   copyToClipboard: function() {
     // Copy the content of the email to the clipboard for easy pasting into GRS.
   }
