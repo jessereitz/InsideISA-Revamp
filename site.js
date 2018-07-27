@@ -1,6 +1,7 @@
 ////////////////////////////////////
 /////     STYLE CONSTANTS     //////
 ////////////////////////////////////
+const TABLE_CTN_STYLE = "font-family: Helvetica Neue, Helvetica, Arial, sans-serif;color: #333333; font-size:16px;";
 const TD_CTN_STYLE = "border-bottom: 3px solid #ddd; position: relative;";
 const CONTENT_HEADING_CTN_STYLE = "margin: 20px; width: 80%;";
 const CONTENT_TYPE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 16px; margin: 0; color: #888;";
@@ -434,6 +435,7 @@ EmailGenerator = {
     this.container = document.getElementById('contentSectionsCtn');
     this.contentSectionsCtn = document.getElementById('contentSectionsCtn');
     this.bottomBtns = document.getElementById('bottomBtns');
+    this.copyTarget = document.getElementById('copyTarget');
     this.generateIntroduction();
     this.generateSection();
   },
@@ -455,7 +457,41 @@ EmailGenerator = {
   },
   copyToClipboard: function() {
     // Copy the content of the email to the clipboard for easy pasting into GRS.
-  }
+    var contentCtn = this.copyTarget.querySelector('#copyTarget-contentSectionsCtn');
+    var introCtn = this.copyTarget.querySelector('#copyTarget-introCtn');
+    var bottomBtns = this.copyTarget.querySelector('#copyTarget-bottomBtns');
+
+    introCtn.append(this.introduction.renderFinal());
+    for (contentSection of this.contentSections) {
+      contentCtn.insertBefore(contentSection.renderFinal(), bottomBtns);
+    }
+    var copyTextarea = document.createElement('textarea');
+    copyTextStyle = "position: fixed; top: 0; left: 0; width: 2em; height: 2em; border: none; outline: none; padding: 0; boxShadow: none; background: transparent;";
+    copyTextarea.setAttribute('style', copyTextStyle);
+    copyTextarea.value = this.copyTarget.parentNode.innerHTML;
+    document.body.append(copyTextarea);
+    copyTextarea.focus();
+    copyTextarea.select();
+
+    try {
+      var successful = document.execCommand('copy');
+    } catch (err) {
+      console.log('err');
+    }
+    document.body.removeChild(copyTextarea);
+    if (successful) {
+      alert('successfully copied!');
+    }
+  },
+  generateTableCtn: function() {
+    var table = document.createElement('table');
+    table.setAttribute('align', 'center');
+    table.setAttribute('cellpaddding', '0');
+    table.setAttribute('cellspacing', '0');
+    table.setAttribute('border', '0');
+    table.setAttribute('width', '600');
+    table.setAttribute('style', TABLE_CTN_STYLE);
+  },
 }
 
 var Controller = {
@@ -471,7 +507,7 @@ var Controller = {
 
   copyCodeHandler: function(e) {
     e.preventDefault();
-    return null;
+    EmailGenerator.copyToClipboard();
   },
   addSectionHandler: function(e) {
     e.preventDefault();
