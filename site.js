@@ -87,7 +87,6 @@ var PopoutEditor = {
       }
 
     }
-    // debugger;
     if (this.editable) {
       this.editable.clickOffHandler();
     }
@@ -235,11 +234,11 @@ var PopoutEditable = {
     }
   },
   renderFinal: function($where) {
+    var el = this.el.cloneNode(true);
     if (this.ctn) {
-      this.ctn.append(this.el);
-      var el = this.ctn;
-    } else {
-      var el = this.el;
+      var ctn = this.ctn.cloneNode();
+      ctn.append(el);
+      var el = ctn;
     }
     if ($where && $where instanceof Element) {
       $where.append(el);
@@ -294,11 +293,16 @@ var InlineEditable = {
       this.el.setAttribute('style', style);
     }
   },
-  insertOrReturnHTML: function($where) {
-    if ($where && $where instanceof Element) {
-      $where.append(this.el);
+  insertOrReturnHTML: function($where, node) {
+    if (node && node instanceof Element) {
+      var node = node;
     } else {
-      return this.el;
+      var node = this.el;
+    }
+    if ($where && $where instanceof Element) {
+      $where.append(node);
+    } else {
+      return node;
     }
   },
   renderEditable: function($where) {
@@ -307,9 +311,10 @@ var InlineEditable = {
     return this.insertOrReturnHTML($where);
   },
   renderFinal: function($where) {
-    this.el.classList.remove('editable');
-    this.el.removeAttribute('contenteditable');
-    return this.insertOrReturnHTML($where);
+    var dupNode = this.el.cloneNode(true);
+    dupNode.classList.remove('editable');
+    dupNode.removeAttribute('contenteditable');
+    return this.insertOrReturnHTML($where, dupNode);
   },
   value: function() {
     return this.el.textContent;
@@ -406,12 +411,17 @@ ContentSection = {
     return this.ctn;
   },
   renderFinal: function($where) {
-    this.headingCtn.append(this.contentType.renderFinal());
-    this.headingCtn.append(this.contentTitle.renderFinal());
-    this.contentImage.renderFinal(this.innerCtn);
-    this.contentBlurb.renderFinal(this.innerCtn);
-    this.contentLink.renderFinal(this.innerCtn);
-    return this.ctn;
+    var ctn = this.ctn.cloneNode();
+    var innerCtn = this.innerCtn.cloneNode(false);
+    var headingCtn = this.headingCtn.cloneNode(false);
+    innerCtn.append(headingCtn);
+    headingCtn.append(this.contentType.renderFinal());
+    headingCtn.append(this.contentTitle.renderFinal());
+    this.contentImage.renderFinal(innerCtn);
+    this.contentBlurb.renderFinal(innerCtn);
+    this.contentLink.renderFinal(innerCtn);
+    ctn.append(innerCtn);
+    return ctn;
   },
   generateDeleteBtn: function() {
     this.deleteBtn = generateElement('button', ['contentSection__deleteBtn', 'standardBtn'], this.idString + 'deleteBtn');
@@ -457,18 +467,20 @@ EmailGenerator = {
   },
   copyToClipboard: function() {
     // Copy the content of the email to the clipboard for easy pasting into GRS.
-    var contentCtn = this.copyTarget.querySelector('#copyTarget-contentSectionsCtn');
-    var introCtn = this.copyTarget.querySelector('#copyTarget-introCtn');
-    var bottomBtns = this.copyTarget.querySelector('#copyTarget-bottomBtns');
+    var copyTarget = this.copyTarget.cloneNode(true);
+    var contentCtn = copyTarget.querySelector('#copyTarget-contentSectionsCtn');
+    var introCtn = copyTarget.querySelector('#copyTarget-introCtn');
+    var bottomBtns = copyTarget.querySelector('#copyTarget-bottomBtns');
 
     introCtn.append(this.introduction.renderFinal());
     for (contentSection of this.contentSections) {
-      contentCtn.insertBefore(contentSection.renderFinal(), bottomBtns);
+      var sec = contentSection.renderFinal();
+      contentCtn.insertBefore(sec, bottomBtns);
     }
     var copyTextarea = document.createElement('textarea');
     copyTextStyle = "position: fixed; top: 0; left: 0; width: 2em; height: 2em; border: none; outline: none; padding: 0; boxShadow: none; background: transparent;";
     copyTextarea.setAttribute('style', copyTextStyle);
-    copyTextarea.value = this.copyTarget.parentNode.innerHTML;
+    copyTextarea.value = copyTarget.outerHTML;
     document.body.append(copyTextarea);
     copyTextarea.focus();
     copyTextarea.select();
