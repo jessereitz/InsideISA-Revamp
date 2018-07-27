@@ -81,10 +81,13 @@ body {
   width: 20px;
   height: 20px;
   transform: rotate(45deg);
+  z-index: 1;
 }
 
 .popoutEditor form {
   margin: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .popoutEditor .editable {
@@ -106,10 +109,11 @@ body {
   border-color: Highlight;
 }
 
-.Editor label {
+.popoutEditor label {
   display: inline-block;
   margin-top: 1em;
   font-size: small;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .email-preview {
