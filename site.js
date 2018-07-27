@@ -86,6 +86,10 @@ var PopoutEditor = {
       }
 
     }
+    // debugger;
+    if (this.editable) {
+      this.editable.clickOffHandler();
+    }
     if (editable) {
       this.editable = editable;
       if (this.editable.fields) {
