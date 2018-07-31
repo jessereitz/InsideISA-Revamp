@@ -459,6 +459,10 @@ var ContentSection = {
       var href = this.getValue('URL');
       var text = this.getValue('Text');
       if (href) {
+        // debugger;
+        if (!href.startsWith('http://') && !href.startsWith('https://')) {
+          href = 'https://' + href;
+        }
         this.el.href = href;
       }
       if (text) {
