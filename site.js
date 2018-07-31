@@ -13,11 +13,12 @@ const CONTENT_IMG_STYLE = "max-width: 100%;  text-align: center; margin-left: au
 const CONTENT_BLURB_STYLE = "margin:0;padding-top:7px;padding-bottom:7px;padding: 20px;";
 const CONTENT_LINK_CTN_STYLE = "margin:0;padding-top:7px;padding-bottom:7px;;padding-left: 20px; padding-bottom: 20px; color: blue;";
 const CONTENT_LINK_STYLE = "color: inherit; text-decoration: none;";
+const COPY_TEXTAREA_STYLE = "position: fixed; top: 0; left: 0; width: 2em; height: 2em; border: none; outline: none; padding: 0; boxShadow: none; background: transparent;";
 
 //////////////////////////////////////
 /////     TEXT PLACEHOLDERS     //////
 //////////////////////////////////////
-const PLACEHOLDER_INTRO = "Enter your introduction here!"
+const PLACEHOLDER_INTRO = "Enter your introduction here!";
 const PLACEHOLDER_TYPE = "Content Type";
 const PLACEHOLDER_TITLE = "Content Title";
 const PLACEHOLDER_IMG = './images/placeholder.gif';
@@ -35,7 +36,7 @@ const CONTENT_LINK_FIELDS = ['URL', 'Text'];
 function generateElement(tagName, klasses, id) {
   /* Provides a simple function to create an element with classes and an id.*/
   if (!tagName) {
-    return False;
+    return false;
   }
   var el = document.createElement(tagName);
   if (id) {
@@ -131,14 +132,16 @@ var PopoutEditor = {
     // Takes an HTML element to use for display positioning. Displays the
     // PopoutEditor at the top right of the given element.
     this.$editor.style.top = yPos;
-    this.$editor.style.left = xPos
+    this.$editor.style.left = xPos;
     this.$editor.classList.remove('hide');
     this.hidden = false;
   },
   hide: function() {
     this.$editor.classList.add('hide');
     this.hidden = true;
-    this.editable ? this.editable.clickOffHandler() : this.editable = null;
+    if (this.editable) {
+      this.editable.clickOffHandler();
+    }
     this.$saveBtn.removeEventListener('submit', this.saveHandler);
     for (let field of this.fields) {
       this.$form.removeChild(field.label);
@@ -154,14 +157,61 @@ var PopoutEditor = {
       this.hide();
     }
   }
-}
+};
 
+
+var InlineEditable = {
+  // InlineEditables are elements which can be editable in-place. They are
+  // essentially elements with contenteditable set to true.
+  generateField: function(tagName, klasses, id, placeholder, style) {
+    // Creates an InlineEditable element with appropriate classes and attrs.
+    if (!klasses) {
+      klasses = [];
+    }
+    klasses.push('editable');
+    this.el = generateElement(tagName, klasses, id);
+    this.el.setAttribute('contenteditable', true);
+    if (placeholder) {
+      this.el.textContent = placeholder;
+    }
+    if (style) {
+      this.el.setAttribute('style', style);
+    }
+  },
+  insertOrReturnHTML: function($where, $node) {
+    var node;
+    if ($node && $node instanceof Element) {
+      node = $node;
+    } else {
+      node = this.el;
+    }
+    if ($where && $where instanceof Element) {
+      $where.append(node);
+    } else {
+      return node;
+    }
+  },
+  renderEditable: function($where) {
+    this.el.classList.add('editable');
+    this.el.setAttribute('contenteditable', true);
+    return this.insertOrReturnHTML($where);
+  },
+  renderFinal: function($where) {
+    var dupNode = this.el.cloneNode(true);
+    dupNode.classList.remove('editable');
+    dupNode.removeAttribute('contenteditable');
+    return this.insertOrReturnHTML($where, dupNode);
+  },
+  value: function() {
+    return this.el.textContent;
+  }
+};
 
 var PopoutEditorField = {
   init: function(fieldName) {
     this.div = Object.create(InlineEditable);
     this.div.generateField('div', [], fieldName);
-    this.div.id = fieldName
+    this.div.id = fieldName;
     this.label = document.createElement('label');
     this.label.setAttribute('for', fieldName);
     this.label.textContent = fieldName;
@@ -180,7 +230,7 @@ var PopoutEditorField = {
   getValue: function() {
     return this.div.value();
   }
-}
+};
 
 
 
@@ -190,7 +240,7 @@ var PopoutEditable = {
   // the pertinent information.
   init: function(tagName, placeholder, id, style, ctnKlass, outerCtn) {
     this.el = generateElement(tagName, [], id);
-    this.el.setAttribute('style', style)
+    this.el.setAttribute('style', style);
     if (tagName === 'img') {
       this.el.src = placeholder;
     } else {
@@ -202,20 +252,13 @@ var PopoutEditable = {
     this.editCtn.href = '#';
     var text = generateElement('div');
     text.textContent = 'edit';
-    text.classList.add(ctnKlass + '__text')
+    text.classList.add(ctnKlass + '__text');
     this.editCtn.append(text);
     this.outerCtn = outerCtn;
 
     this.editCtn.addEventListener('click', this.clickHandler.bind(this));
   },
   fields: [],
-  insertFields: function($where) {
-    // iterates through fields and renders them on the given HTML element ($where)
-    for (let field of fields) {
-      field.insertLabel($where);
-      field.insertDiv($where);
-    }
-  },
   addField: function(fieldName) {
     // Creates and pushes a new PopoutEditorField to this.fields.
     var field = Object.create(PopoutEditorField);
@@ -230,22 +273,23 @@ var PopoutEditable = {
     }
   },
   renderEditable: function($where, ctnKlass) {
-    var tnKlasses = ['popoutEdit'];
+    var ctnKlasses = ['popoutEdit'];
     if (ctnKlass) {
       ctnKlasses.push(ctnKlass);
     }
+    var el;
     if (this.ctn) {
       this.ctn.append(this.el);
-      var el = this.ctn;
+      el = this.ctn;
     } else {
-      var el = this.el;
+      el = this.el;
     }
     this.editCtn.append(el);
 
     if ($where && $where instanceof Element) {
       $where.append(this.editCtn);
     } else {
-      return editCtn;
+      return this.editCtn;
     }
   },
   renderFinal: function($where) {
@@ -253,7 +297,7 @@ var PopoutEditable = {
     if (this.ctn) {
       var ctn = this.ctn.cloneNode();
       ctn.append(el);
-      var el = ctn;
+      el = ctn;
     }
     if ($where && $where instanceof Element) {
       $where.append(el);
@@ -288,53 +332,7 @@ var PopoutEditable = {
     var clicked = this.editCtn.contains(e.target);
     return clicked;
   }
-}
-
-var InlineEditable = {
-  // InlineEditables are elements which can be editable in-place. They are
-  // essentially elements with contenteditable set to true.
-  generateField: function(tagName, klasses, id, placeholder, style) {
-    // Creates an InlineEditable element with appropriate classes and attrs.
-    if (!klasses) {
-      klasses = [];
-    }
-    klasses.push('editable');
-    this.el = generateElement(tagName, klasses, id);
-    this.el.setAttribute('contenteditable', true);
-    if (placeholder) {
-      this.el.textContent = placeholder;
-    }
-    if (style) {
-      this.el.setAttribute('style', style);
-    }
-  },
-  insertOrReturnHTML: function($where, node) {
-    if (node && node instanceof Element) {
-      var node = node;
-    } else {
-      var node = this.el;
-    }
-    if ($where && $where instanceof Element) {
-      $where.append(node);
-    } else {
-      return node;
-    }
-  },
-  renderEditable: function($where) {
-    this.el.classList.add('editable');
-    this.el.setAttribute('contenteditable', true);
-    return this.insertOrReturnHTML($where);
-  },
-  renderFinal: function($where) {
-    var dupNode = this.el.cloneNode(true);
-    dupNode.classList.remove('editable');
-    dupNode.removeAttribute('contenteditable');
-    return this.insertOrReturnHTML($where, dupNode);
-  },
-  value: function() {
-    return this.el.textContent;
-  }
-}
+};
 
 var ContentSection = {
   init: function(id, parentGenerator) {
@@ -345,7 +343,7 @@ var ContentSection = {
     */
     id = Number(id);
     if (isNaN(id)) {
-      return False;
+      return false;
     }
     this.id = id;
     this.parentGenerator = parentGenerator;
@@ -391,7 +389,7 @@ var ContentSection = {
     this.addPopoutField('contentLink', 'a', this.placeholderStart + PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
     var ctn = generateElement('div');
     ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
-    this['contentLink'].ctn = ctn;
+    this.contentLink.ctn = ctn;
     this.contentLink.setSaveHandler(function (e) {
       e.preventDefault();
       var href = this.getValue('URL');
@@ -402,7 +400,7 @@ var ContentSection = {
       if (text) {
         this.el.textContent = text;
       }
-    })
+    });
   },
   createCtns: function() {
     this.ctn = document.createElement('tr');
@@ -450,7 +448,7 @@ var ContentSection = {
     this.parentGenerator.deleteContentSection(this);
   }
 
-}
+};
 
 var EmailGenerator = {
   init: function() {
@@ -471,11 +469,11 @@ var EmailGenerator = {
   },
   generateSection: function() {
     var section = Object.create(ContentSection);
+    var sectionId;
     if (this.contentSections.length > 0) {
-
-      var sectionId = this.contentSections[this.contentSections.length-1].id + 1;
+      sectionId = this.contentSections[this.contentSections.length-1].id + 1;
     } else {
-      var sectionId = 1;
+      sectionId = 1;
     }
     section.init(sectionId, this);
     this.contentSections.push(section);
@@ -493,26 +491,27 @@ var EmailGenerator = {
     var bottomBtns = copyTarget.querySelector('#copyTarget-bottomBtns');
 
     introCtn.append(this.introduction.renderFinal());
-    for (contentSection of this.contentSections) {
+    for (let contentSection of this.contentSections) {
       var sec = contentSection.renderFinal();
       contentCtn.insertBefore(sec, bottomBtns);
     }
     var copyTextarea = document.createElement('textarea');
-    copyTextStyle = "position: fixed; top: 0; left: 0; width: 2em; height: 2em; border: none; outline: none; padding: 0; boxShadow: none; background: transparent;";
+    var copyTextStyle = COPY_TEXTAREA_STYLE;
     copyTextarea.setAttribute('style', copyTextStyle);
     copyTextarea.value = copyTarget.outerHTML;
     document.body.append(copyTextarea);
     copyTextarea.focus();
     copyTextarea.select();
 
+    var successful;
     try {
-      var successful = document.execCommand('copy');
+      successful = document.execCommand('copy');
     } catch (err) {
       console.error('err');
     }
     document.body.removeChild(copyTextarea);
     if (successful) {
-      alert('successfully copied!');
+      window.alert('successfully copied!');
     }
   },
   generateTableCtn: function() {
@@ -524,7 +523,7 @@ var EmailGenerator = {
     table.setAttribute('width', '600');
     table.setAttribute('style', TABLE_CTN_STYLE);
   },
-}
+};
 
 var Controller = {
   init: function() {
@@ -549,25 +548,7 @@ var Controller = {
     e.preventDefault();
     location.reload();
   }
-}
-var imgEdit = document.getElementById('imgEdit0');
-var linkEdit = document.getElementById('linkEdit0');
-var editor = PopoutEditor;
-
-var ctn = document.getElementById('contentSectionsCtn');
-var bottomBtns = document.getElementById('bottomBtns');
-var section = Object.create(ContentSection);
-function setup() {
-  section.init(0);
-  PopoutEditor.init();
-  PopoutEditor.setup(section.contentImage);
-  ctn.insertBefore(section.renderEditable(), bottomBtns);
-}
-
-function displayPopout() {
-  var img = document.getElementById('section0_contentImage');
-  PopoutEditor.display(img);
-}
+};
 
 document.addEventListener('DOMContentLoaded', function(e) {
   EmailGenerator.init();
