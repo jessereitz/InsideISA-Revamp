@@ -227,6 +227,7 @@ var InlineEditable = {
     if (style) {
       this.el.setAttribute('style', style);
     }
+    this.el.addEventListener('click', this.clickHandler.bind(this));
   },
   insertOrReturnHTML: function($where, $node) {
     /* Append the HTML for el to $where or simply return the HTML for el. */
@@ -255,6 +256,10 @@ var InlineEditable = {
     dupNode.removeAttribute('contenteditable');
     return this.insertOrReturnHTML($where, dupNode);
   },
+  clickHandler: function(e) {
+    this.el.focus();
+    document.execCommand('selectAll', false, null);
+  },
   value: function() {
     /* Returns the value of the editable, similar to a form field. */
     return this.el.textContent;
@@ -262,6 +267,11 @@ var InlineEditable = {
 };
 
 var PopoutEditorField = {
+  /* Fields to be used in the PopoutEditor.
+
+  A PopoutEditorField
+
+  */
   init: function(fieldName) {
     this.div = Object.create(InlineEditable);
     this.div.generateField('div', [], fieldName);
