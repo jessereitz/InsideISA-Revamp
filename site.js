@@ -1,3 +1,6 @@
+(function InitializeInsideISAEmailGenerator() {
+  'use strict';
+
 ////////////////////////////////////
 /////     STYLE CONSTANTS     //////
 ////////////////////////////////////
@@ -30,6 +33,7 @@ const CONTENT_LINK_FIELDS = ['URL', 'Text'];
 /////     UTILITIES     /////
 /////////////////////////////
 function generateElement(tagName, klasses, id) {
+  /* Provides a simple function to create an element with classes and an id.*/
   if (!tagName) {
     return False;
   }
@@ -60,15 +64,26 @@ var PopoutEditor = {
       $form (HTML Element): The HTML form contained within $editor.
       fields (Array of PopoutEditorField): The fields to be displayed as part
         of the PopoutEditor.
+      $saveBtn (HTML Element): The save (submit) button for $form.
+      $cancelBtn (HTML Element): A button in $form that dismisses the
+        PopoutEditor without saving the user's changes.
+      fields (Array of PopoutEditorField): An Array of the fields that currently
+        compose the PopoutEditor.
+      saveHandler (function): The function to be called when the #saveBtn is
+        clicked.
   */
   init: function() {
-    // initializes the PopoutEditor by finding the editor on DOM.
+    /* Initialize the PopoutEditor
+
+    This method initializes the PopoutEditor by finding its respective elements
+
+    */
     this.$editor = document.getElementById("popoutEditor");
     this.$form = this.$editor.getElementsByTagName('form')[0];
     this.$saveBtn = this.$form.querySelector('#popoutSave');
     this.$cancelBtn = this.$form.querySelector('#popoutCancel');
     this.fields = [];
-    this.handler;
+    this.saveHandler = null;
     this.hide();
     this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
     this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
@@ -215,7 +230,7 @@ var PopoutEditable = {
     }
   },
   renderEditable: function($where, ctnKlass) {
-    ctnKlasses = ['popoutEdit'];
+    var tnKlasses = ['popoutEdit'];
     if (ctnKlass) {
       ctnKlasses.push(ctnKlass);
     }
@@ -321,7 +336,7 @@ var InlineEditable = {
   }
 }
 
-ContentSection = {
+var ContentSection = {
   init: function(id, parentGenerator) {
     // generates each field in fields as a placeholder.
     /*
@@ -432,12 +447,12 @@ ContentSection = {
   },
   delete: function() {
     this.ctn.parentNode.removeChild(this.ctn);
-    this.parentGenerator.deleteContentSection(this.id);
+    this.parentGenerator.deleteContentSection(this);
   }
 
 }
 
-EmailGenerator = {
+var EmailGenerator = {
   init: function() {
     // find the email container in the document, generate first content section,
     // get everything good to go.
@@ -456,14 +471,19 @@ EmailGenerator = {
   },
   generateSection: function() {
     var section = Object.create(ContentSection);
-    // debugger;
-    section.init(this.contentSections.length + 1, this);
+    if (this.contentSections.length > 0) {
+
+      var sectionId = this.contentSections[this.contentSections.length-1].id + 1;
+    } else {
+      var sectionId = 1;
+    }
+    section.init(sectionId, this);
     this.contentSections.push(section);
     this.contentSectionsCtn.insertBefore(section.renderEditable(), this.bottomBtns);
   },
-  deleteContentSection: function(sectionId) {
-    var section = this.contentSections.splice(sectionId-1, 1);
-    delete section;
+  deleteContentSection: function(section) {
+    var sectionIndex = this.contentSections.indexOf(section);
+    this.contentSections.splice(sectionIndex, 1);
   },
   copyToClipboard: function() {
     // Copy the content of the email to the clipboard for easy pasting into GRS.
@@ -488,7 +508,7 @@ EmailGenerator = {
     try {
       var successful = document.execCommand('copy');
     } catch (err) {
-      console.log('err');
+      console.error('err');
     }
     document.body.removeChild(copyTextarea);
     if (successful) {
@@ -554,3 +574,4 @@ document.addEventListener('DOMContentLoaded', function(e) {
   PopoutEditor.init();
   Controller.init();
 });
+})();
