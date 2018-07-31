@@ -4,6 +4,10 @@
 ////////////////////////////////////
 /////     STYLE CONSTANTS     //////
 ////////////////////////////////////
+/*
+  These constants are used for the inline-style on various pieces of the HTML
+  email.
+*/
 const TABLE_CTN_STYLE = "font-family: Helvetica Neue, Helvetica, Arial, sans-serif;color: #333333; font-size:16px;";
 const TD_CTN_STYLE = "border-bottom: 3px solid #ddd; position: relative;";
 const CONTENT_HEADING_CTN_STYLE = "margin: 20px; width: 80%;";
@@ -18,6 +22,9 @@ const COPY_TEXTAREA_STYLE = "position: fixed; top: 0; left: 0; width: 2em; heigh
 //////////////////////////////////////
 /////     TEXT PLACEHOLDERS     //////
 //////////////////////////////////////
+/*
+  These are the default values for sections of the HTML email.
+*/
 const PLACEHOLDER_INTRO = "Enter your introduction here!";
 const PLACEHOLDER_TYPE = "Content Type";
 const PLACEHOLDER_TITLE = "Content Title";
@@ -25,7 +32,13 @@ const PLACEHOLDER_IMG = './images/placeholder.gif';
 const PLACEHOLDER_BLURB = "This is the blurb";
 const PLACEHOLDER_LINK = "Learn More";
 
-// FIELDS
+//////////////////////////
+/////     FIELDS     /////
+//////////////////////////
+/*
+  These are the PopoutEditor fields for the image and link sections of the HTML
+  email.
+*/
 const CONTENT_IMG_FIELDS = ['URL', 'Title', 'Alt Text'];
 const CONTENT_LINK_FIELDS = ['URL', 'Text'];
 
@@ -55,10 +68,10 @@ function generateElement(tagName, klasses, id) {
 /////     Popout Editor     /////
 /////////////////////////////////
 var PopoutEditor = {
-  /*  PopoutEditor allows quick editing of more complex elements.
+  /*  PopoutEditor allows quick editing of more complex elements (img, a, etc).
 
-    This is used for parts of the InsideISA email which require more input than
-    simple text (eg. images, links, etc.).
+    This is used for the image and link sections of the InsideISA email, which
+    require more input from the user in order to properly be displayed.
 
     Attributes:
       $editor (HTML Element): The HTML Element containing the editor.
@@ -76,7 +89,9 @@ var PopoutEditor = {
   init: function() {
     /* Initialize the PopoutEditor
 
-    This method initializes the PopoutEditor by finding its respective elements
+    This method initializes the PopoutEditor by finding its respective elements,
+    ensures that its html elements are hidden, and attaching the appropriate
+    event listeners to $form, $cancelBtn, and the document object.
 
     */
     this.$editor = document.getElementById("popoutEditor");
@@ -84,16 +99,28 @@ var PopoutEditor = {
     this.$saveBtn = this.$form.querySelector('#popoutSave');
     this.$cancelBtn = this.$form.querySelector('#popoutCancel');
     this.fields = [];
-    this.saveHandler = null;
     this.hide();
     this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
     this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
     document.addEventListener('click', this.defaultOffClickHandler.bind(this));
   },
   setup: function(editable, saveHandler) {
-    // sets up the PopoutEditor for use.
-    // fields is Array of PopoutEditorField
-    // saveHandler is Function to be called when the save button is pressed.
+    /* Sets up the PopoutEditor for use.
+
+    This method differs from the init method in that it adds the appropriate
+    fields and saveHandler to the PopoutEditor. The init method merely ensure
+    the PopoutEditor exists and that it has the proper properties for use; setup
+    actually gets it ready for use by the user.
+
+    setup does five things:
+      1. Iterate through and remove current fields, if applicable
+      2. Resets current editable, if applicable. This ensures current editable
+          no longer displays as active.
+      3. Assigns PopoutEditor's editable to that passed. Makes this.fields point
+          to new editable's fields.
+      4. Renders fields into $form.
+      5. Assigns the given saveHandler to be called on $form submit.
+    */
     for (let field of this.fields) {
       if (this.$form.contains(field.label)) {
         this.$form.removeChild(field.label);
@@ -101,7 +128,6 @@ var PopoutEditor = {
       if (this.$form.contains(field.div.el)) {
         this.$form.removeChild(field.div.el);
       }
-
     }
     if (this.editable) {
       this.editable.clickOffHandler();
@@ -119,7 +145,6 @@ var PopoutEditor = {
       this.$form.insertBefore(field.insertLabel(), this.$saveBtn);
       this.$form.insertBefore(field.insertDiv(), this.$saveBtn);
     }
-
     if (saveHandler) {
       this.saveHandler = saveHandler;
       this.$form.addEventListener('submit', this.saveHandler);
@@ -128,15 +153,14 @@ var PopoutEditor = {
     }
   },
   display: function(xPos, yPos) {
-    // $where (HTML element; req)
-    // Takes an HTML element to use for display positioning. Displays the
-    // PopoutEditor at the top right of the given element.
+    /* Display the PopoutEditor at the given x-position (xPos) and y-position (yPos) */
     this.$editor.style.top = yPos;
     this.$editor.style.left = xPos;
     this.$editor.classList.remove('hide');
     this.hidden = false;
   },
   hide: function() {
+    /* Hide the PopoutEditor and remove the active state from the editable. */
     this.$editor.classList.add('hide');
     this.hidden = true;
     if (this.editable) {
@@ -149,10 +173,18 @@ var PopoutEditor = {
     }
   },
   defaultHideHandler: function(e) {
+    /* This method provides default functionality for hiding the PopoutEditor. */
     e.preventDefault();
     this.hide();
   },
   defaultOffClickHandler: function(e) {
+    /* Auto-hide PopoutEditor if user clicks off.
+
+    This is the default method for auto-hiding the PopoutEditor if a user
+    clicks off the editor. If the user clicks on any element other than the
+    current editable or the PopoutEditor, the PopoutEditor will be hidden and
+    all changes will be lost.
+   */
     if (!this.hidden && (!this.$editor.contains(e.target) && !this.editable.wasClicked(e))) {
       this.hide();
     }
@@ -161,10 +193,28 @@ var PopoutEditor = {
 
 
 var InlineEditable = {
-  // InlineEditables are elements which can be editable in-place. They are
-  // essentially elements with contenteditable set to true.
+  /* InlineEditables are elements which can be editable in-place.
+
+  One of two types of editables, InlineEdtiables can simply be clicked on and
+  edited in place. They do not require the use of the PopoutEditor in order to
+  be edited. In practice, they are essentially just divs with contenteditable
+  set to true.
+
+  Attributes:
+    el (HTML element): The HTML element which will be displayed.
+  */
   generateField: function(tagName, klasses, id, placeholder, style) {
-    // Creates an InlineEditable element with appropriate classes and attrs.
+    /* Generates the InlineEditable field.
+
+    Arguments:
+      tagName (String): the type of element to be used (typically div)
+      klasses (Array of String): an Array of Strings to be added to el as
+        classes.
+      id (String): the id to be added to el
+      placeholder (String): the text to be placed in the element by default.
+      style (String): any inline style to be added to el. This is useful
+        because this is an HTML email editor.
+     */
     if (!klasses) {
       klasses = [];
     }
@@ -179,6 +229,7 @@ var InlineEditable = {
     }
   },
   insertOrReturnHTML: function($where, $node) {
+    /* Append the HTML for el to $where or simply return the HTML for el. */
     var node;
     if ($node && $node instanceof Element) {
       node = $node;
@@ -192,17 +243,20 @@ var InlineEditable = {
     }
   },
   renderEditable: function($where) {
+    /* Renders the InlineEditable in an editable format. */
     this.el.classList.add('editable');
     this.el.setAttribute('contenteditable', true);
     return this.insertOrReturnHTML($where);
   },
   renderFinal: function($where) {
+    /* Renders the InlineEditable in the final, non-editable format. */
     var dupNode = this.el.cloneNode(true);
     dupNode.classList.remove('editable');
     dupNode.removeAttribute('contenteditable');
     return this.insertOrReturnHTML($where, dupNode);
   },
   value: function() {
+    /* Returns the value of the editable, similar to a form field. */
     return this.el.textContent;
   }
 };
