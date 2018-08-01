@@ -10,9 +10,8 @@
 */
 const TABLE_CTN_STYLE = "font-family: Helvetica Neue, Helvetica, Arial, sans-serif;color: #333333; font-size:16px;";
 const TD_CTN_STYLE = "border-bottom: 3px solid #ddd; position: relative;";
-const CONTENT_HEADING_CTN_STYLE = "margin: 20px; width: 80%;";
-const CONTENT_TYPE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 16px; margin: 0; color: #888;";
-const CONTENT_TITLE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 24px; margin: 0; margin-top: 5px; color: #333;";
+const CONTENT_TYPE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 16px; margin: 0; padding: 20px; padding-top: 3px; padding-bottom: 3px; margin-top: 17px; color: #888;";
+const CONTENT_TITLE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 24px; margin: 0; padding: 20px; padding-top: 3px; padding-bottom: 3px; margin-bottom: 17px; color: #333;";
 const CONTENT_IMG_STYLE = "max-width: 100%;  text-align: center; margin-left: auto; margin-right: auto;";
 const CONTENT_BLURB_STYLE = "margin:0;padding-top:7px;padding-bottom:7px;padding: 20px;";
 const CONTENT_LINK_STYLE = "display: block; text-decoration: none; margin:0;padding-top:7px;padding-bottom:7px;;padding-left: 20px; padding-bottom: 20px; color: blue;";
@@ -491,6 +490,9 @@ var ContentSection = {
       that it provides a reader-friendly format of the id. Takes the form of
       "SectionN " where 'N' is the id. This is used to display as a placeholder
       for new and empty ContentSections.
+    fields (Array of Editable): This array contains all the Editable components
+      of the ContentSection, both InlineEditable and PopoutEditable elements are
+      contained.
   */
   init: function(id, parentGenerator) {
     // generates each field in fields as a placeholder.
@@ -513,6 +515,7 @@ var ContentSection = {
     this.parentGenerator = parentGenerator;
     this.idString = 'section' + String(this.id) + '_';
     this.placeholderStart = "Section " + this.id + " ";
+    this.fields = [];
     this.createCtns();
     this.addInlineField('contentType', 'h2', this.placeholderStart + PLACEHOLDER_TYPE, CONTENT_TYPE_STYLE);
     this.addInlineField('contentTitle', 'h1', this.placeholderStart + PLACEHOLDER_TITLE, CONTENT_TITLE_STYLE);
@@ -532,8 +535,10 @@ var ContentSection = {
         InlineEditable by default.
       style (String): the inline style to be added to the InlineEditable.
     */
-    this[fieldName] = Object.create(InlineEditable);
-    this[fieldName].generateField(tagName, [], this.idString + fieldName, placeholder, style);
+    var field = Object.create(InlineEditable);
+    field.generateField(tagName, [], this.idString + fieldName, placeholder, style);
+    this.fields.push(field);
+    return field;
   },
   addPopoutField: function(fieldName, tagName, placeholder, popoutFields, style, ctnKlass) {
     /* Creates a PopoutEditable and attaches it to this ContentSection.
@@ -552,10 +557,11 @@ var ContentSection = {
           PopoutEditable (eg. img can look different than a link).
 
     */
-    this[fieldName] = Object.create(PopoutEditable);
-    this[fieldName].init(tagName, placeholder, this.idString + fieldName, style, ctnKlass, this.ctn);
-    this[fieldName].addFields(popoutFields);
-
+    var field = Object.create(PopoutEditable);
+    field.init(tagName, placeholder, this.idString + fieldName, style, ctnKlass, this.ctn);
+    field.addFields(popoutFields);
+    this.fields.push(field);
+    return field;
   },
   addImageField: function() {
     /* Add the image field to this ContentSection.
@@ -565,8 +571,8 @@ var ContentSection = {
         PopoutEditable for the image.
       2. Set a saveHandler for the image PopoutEditable.
     */
-    this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, CONTENT_IMG_FIELDS, CONTENT_IMG_STYLE, 'imgEdit');
-    this.contentImage.setSaveHandler(function (e) {
+    var field = this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, CONTENT_IMG_FIELDS, CONTENT_IMG_STYLE, 'imgEdit');
+    field.setSaveHandler(function (e) {
       // This saveHandler simply sets the URL, Title, and Alt Attributes
       // for the image to those supplied by user in PopoutEditor.
       e.preventDefault();
@@ -590,11 +596,13 @@ var ContentSection = {
     This method does two things:
       1. Call this ContentSection's addPopoutField method to create a
         PopoutEditable for the link.
-      2. Creates an inner container for the link
       2. Set a saveHandler for the link PopoutEditable.
     */
-    this.addPopoutField('contentLink', 'a', this.placeholderStart + PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
-    this.contentLink.setSaveHandler(function (e) {
+    var linkField = this.addPopoutField('contentLink', 'a', this.placeholderStart + PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
+    linkField.setSaveHandler(function (e) {
+      // Sets href and text values for the link. Validates the given href to
+      // ensure it specifies to use the http or https protocol in order to
+      // ensure loading of the link.
       e.preventDefault();
       var href = this.getValue('URL');
       var text = this.getValue('Text');
@@ -610,36 +618,32 @@ var ContentSection = {
     });
   },
   createCtns: function() {
+    /* Renders the necessary containing elements for the email.
+
+    Because of the format of the emails generated by ISA's in-house HTML email
+    editor, we must wrap each content section in a <tr/> and <td/> element. This
+    also creates the
+    */
     this.ctn = document.createElement('tr');
     this.innerCtn = document.createElement('td');
     this.innerCtn.setAttribute('style', TD_CTN_STYLE);
-    this.headingCtn = document.createElement('div');
-    this.headingCtn.setAttribute('style', CONTENT_HEADING_CTN_STYLE);
-    this.innerCtn.append(this.headingCtn);
     this.ctn.append(this.innerCtn);
-
     if (this.id !== 1) {
       this.generateDeleteBtn();
     }
   },
   renderEditable: function($where) {
-    this.headingCtn.append(this.contentType.renderEditable());
-    this.headingCtn.append(this.contentTitle.renderEditable());
-    this.contentImage.renderEditable(this.innerCtn);
-    this.contentBlurb.renderEditable(this.innerCtn);
-    this.contentLink.renderEditable(this.innerCtn);
+    for (let field of this.fields) {
+      field.renderEditable(this.innerCtn);
+    }
     return this.ctn;
   },
   renderFinal: function($where) {
     var ctn = this.ctn.cloneNode();
     var innerCtn = this.innerCtn.cloneNode(false);
-    var headingCtn = this.headingCtn.cloneNode(false);
-    innerCtn.append(headingCtn);
-    headingCtn.append(this.contentType.renderFinal());
-    headingCtn.append(this.contentTitle.renderFinal());
-    this.contentImage.renderFinal(innerCtn);
-    this.contentBlurb.renderFinal(innerCtn);
-    this.contentLink.renderFinal(innerCtn);
+    for (let field of this.fields) {
+      field.renderFinal(innerCtn);
+    }
     ctn.append(innerCtn);
     return ctn;
   },
