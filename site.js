@@ -120,13 +120,17 @@ var PopoutEditor = {
           to new editable's fields.
       4. Renders fields into $form.
       5. Assigns the given saveHandler to be called on $form submit.
+
+    Params:
+      editable (PopoutEditable): the PopoutEditable which is being edited.
+      saveHandler (Function): the function to call on $form submit.
     */
     for (let field of this.fields) {
       if (this.$form.contains(field.label)) {
         this.$form.removeChild(field.label);
       }
-      if (this.$form.contains(field.div.el)) {
-        this.$form.removeChild(field.div.el);
+      if (this.$form.contains(field.field.el)) {
+        this.$form.removeChild(field.field.el);
       }
     }
     if (this.editable) {
@@ -145,7 +149,7 @@ var PopoutEditor = {
       this.$form.insertBefore(field.insertOrReturnLabel(), this.$saveBtn);
       this.$form.insertBefore(field.insertOrReturnDiv(), this.$saveBtn);
     }
-    if (saveHandler) {
+    if (saveHandler && typeof saveHandler === 'function') {
       this.saveHandler = saveHandler;
       this.$form.addEventListener('submit', this.saveHandler);
     } else {
@@ -169,7 +173,7 @@ var PopoutEditor = {
     this.$saveBtn.removeEventListener('submit', this.saveHandler);
     for (let field of this.fields) {
       this.$form.removeChild(field.label);
-      this.$form.removeChild(field.div.el);
+      this.$form.removeChild(field.field.el);
     }
   },
   defaultHideHandler: function(e) {
@@ -313,10 +317,48 @@ var PopoutEditorField = {
 };
 
 var PopoutEditable = {
-  // PopoutEditables are elements which have multiple fields of information
-  // which must be supplied. These elements use the PopoutEditor to supply all
-  // the pertinent information.
+  /* A field which requires more than one input value from the user.
+
+  A PopoutEditable is a field which requires the user to input more than one
+  value in order to be rendered in the final email. For now, this is only the
+  image and link in each section. Because an image requires a src url, title,
+  and alt text and because the link requires a url as well as reader-friendly
+  text, the user must have a way to easily enter each of these fields. That's
+  what the popoutEdditable does.
+
+  A PopoutEditable is initialized as the desired HTML Element and given a set
+  of fields for the values required for the user to edit said HTML Element.
+
+  Attributes:
+    el (HTML Element): The HTML element representing the final displayed version
+      of the editable (eg. the <img> or <a> element).
+    fields (Array of PopoutEditorField): The fields to present to the user to
+      edit el.
+    editCtn (HTML Element): The HTML element to be displayed as a wrapper around
+      the final editable tag. This is done to allow for clear styling that the
+      element can be edited.
+    outerCtn: (HTML Element): The containing element. This is used only when
+      displaying the PopoutEditor in order to appropriately position the editor.
+
+  */
   init: function(tagName, placeholder, id, style, ctnKlass, outerCtn) {
+    /* Initialize the PopoutEditable.
+
+    Creates the desired element, adds appropriate placeholder, id, and style.
+    Creates the editing container and adds the appropriate classes and click
+    handlers in order to enable the PopoutEditor.
+
+    Params:
+      tagName (String): The tagname to use to create the element (eg. img).
+      placeholder (String): The placeholder text (or image for img tags) to
+        display as a default.
+      id (String): The value to use as the id on this.el.
+      style (String): The inline style to be added to this.el.
+      ctnKlass (String): The class to add to this.editCtn. This is used to allow
+        for custom styling for different types of editables (img vs. a).
+      outerCtn (HTML Element): The containing element (eg. the ContentSection)
+        to which this editable will belong.
+    */
     this.el = generateElement(tagName, [], id);
     this.el.setAttribute('style', style);
     if (tagName === 'img') {
@@ -336,34 +378,35 @@ var PopoutEditable = {
 
     this.editCtn.addEventListener('click', this.clickHandler.bind(this));
   },
-  fields: [],
-  addField: function(fieldName) {
-    // Creates and pushes a new PopoutEditorField to this.fields.
-    var field = Object.create(PopoutEditorField);
-    field.init(fieldName);
-    this.fields.push(field);
-  },
   addFields: function(fields) {
+    /* Adds given fields to the PopoutEditable.
+
+    This method accepts either a single String or an Array of Strings
+    representing the name of each field to be added. For each field provided
+    a new PopoutEditorField is created and added to this.fields.
+
+    Params:
+      fields (Array of String || String): fields can either be a single String
+        representing the title of each field or an Array of such Strings.
+
+    */
+    if (!Array.isArray(fields)) {
+      fields = [fields];
+    }
     for (let fieldName of fields) {
       var field = Object.create(PopoutEditorField);
       field.init(fieldName);
       this.fields.push(field);
     }
   },
-  renderEditable: function($where, ctnKlass) {
-    var ctnKlasses = ['popoutEdit'];
-    if (ctnKlass) {
-      ctnKlasses.push(ctnKlass);
-    }
-    var el;
-    if (this.ctn) {
-      this.ctn.append(this.el);
-      el = this.ctn;
-    } else {
-      el = this.el;
-    }
-    this.editCtn.append(el);
+  renderEditable: function($where) {
+    /* Renders the PopoutEditable in an editable format wrapped in this.editCtn.
 
+    Params:
+      $where (HTML Element; opt): If provided, this is the HTML element to which
+        the Editable will be attached.
+    */
+    this.editCtn.append(this.el);
     if ($where && $where instanceof Element) {
       $where.append(this.editCtn);
     } else {
@@ -371,6 +414,16 @@ var PopoutEditable = {
     }
   },
   renderFinal: function($where) {
+    /* Renders the PopoutEditable in its final, finished form.
+
+    In order to maintain the editing screen while still being able to render the
+    final element for copying, we must clone the node and remove its editCtn.
+
+    Params:
+      $where (HTML Element; opt): If provided, this is the HTML Element to which
+        the final elemtn will be attached.
+
+    */
     var el = this.el.cloneNode(true);
     if (this.ctn) {
       var ctn = this.ctn.cloneNode();
@@ -384,31 +437,41 @@ var PopoutEditable = {
     }
   },
   clickHandler: function(e) {
+    /* Handler for when a user clicks on the Editable while editing.
+
+    This handler prevents the default action (important for Editables that are
+    links), adds the focused class to the editCtn, determines the display
+    coordinates for the PopoutEditor then sets up and displays the PopoutEditor.
+    */
     e.preventDefault();
     this.editCtn.classList.add('popoutEdit--focus');
     var right = this.outerCtn.getBoundingClientRect();
     right = right.right + 25;
     var top = this.el.getBoundingClientRect();
     top = top.top + window.scrollY;
-    // debugger;
     PopoutEditor.setup(this, this.saveHandler);
     PopoutEditor.display(right, top);
   },
   setSaveHandler: function(func) {
-    this.saveHandler = func.bind(this);
+    // Sets the save handler to given function.
+    if (typeof func === 'function'){
+      this.saveHandler = func.bind(this);
+    }
   },
   clickOffHandler: function() {
+    // The function to handle when the user clicks off or out of editing this Editable.
     this.editCtn.classList.remove('popoutEdit--focus');
   },
   getValue: function(fieldName) {
+    // Returns the value of the field with the given fieldName.
     var field = this.fields.find(function (el) {
-      return el.div.id === fieldName;
+      return el.field.id === fieldName;
     });
     return field.getValue();
   },
   wasClicked: function(e) {
-    var clicked = this.editCtn.contains(e.target);
-    return clicked;
+    // when given an event, returns true if this Editable was the target.
+    return this.editCtn.contains(e.target);
   }
 };
 
@@ -468,12 +531,19 @@ var ContentSection = {
     var ctn = generateElement('div');
     ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
     this.contentLink.ctn = ctn;
+    this.contentLink.renderEditable = function($where) {
+      this.ctn.append(this.el);
+      var tmpEl = this.el;
+      this.el = this.ctn;
+      var proto = Object.getPrototypeOf(this);
+      proto.renderEditable.call(this, $where);
+      this.el = tmpEl;
+    };
     this.contentLink.setSaveHandler(function (e) {
       e.preventDefault();
       var href = this.getValue('URL');
       var text = this.getValue('Text');
       if (href) {
-        // debugger;
         if (!href.startsWith('http://') && !href.startsWith('https://')) {
           href = 'https://' + href;
         }
