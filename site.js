@@ -142,8 +142,8 @@ var PopoutEditor = {
 
     }
     for (let field of this.fields) {
-      this.$form.insertBefore(field.insertLabel(), this.$saveBtn);
-      this.$form.insertBefore(field.insertDiv(), this.$saveBtn);
+      this.$form.insertBefore(field.insertOrReturnLabel(), this.$saveBtn);
+      this.$form.insertBefore(field.insertOrReturnDiv(), this.$saveBtn);
     }
     if (saveHandler) {
       this.saveHandler = saveHandler;
@@ -206,7 +206,7 @@ var InlineEditable = {
   generateField: function(tagName, klasses, id, placeholder, style) {
     /* Generates the InlineEditable field.
 
-    Arguments:
+    Params:
       tagName (String): the type of element to be used (typically div)
       klasses (Array of String): an Array of Strings to be added to el as
         classes.
@@ -269,18 +269,32 @@ var InlineEditable = {
 var PopoutEditorField = {
   /* Fields to be used in the PopoutEditor.
 
-  A PopoutEditorField
+  A PopoutEditorField is composed of two elements: an HTML label element and an
+  InlineEditable representing the editable div.
+
+  Attributes:
+    field (InlineEditable): the field is simply the editable div which users
+      can use to input their data.
+    label (HTML Element): The label is an HTML label element which describes the
+      field.
 
   */
   init: function(fieldName) {
-    this.div = Object.create(InlineEditable);
-    this.div.generateField('div', [], fieldName);
-    this.div.id = fieldName;
+    /* Initializes the PopoutEditorField.
+
+    Params:
+      fieldName (String): the name to be used for the PopoutEditorField. This is
+        displayed in the label and is used for the id of the InlineEditable div.
+     */
+    this.field = Object.create(InlineEditable);
+    this.field.generateField('div', [], fieldName);
+    this.field.id = fieldName;
     this.label = document.createElement('label');
     this.label.setAttribute('for', fieldName);
     this.label.textContent = fieldName;
   },
-  insertLabel: function($where) {
+  insertOrReturnLabel: function($where) {
+    /* Appends label to given HTML element $where or returns the label. */
     if ($where && $where instanceof Element) {
         $where.append(this.label);
     } else {
@@ -288,15 +302,15 @@ var PopoutEditorField = {
     }
 
   },
-  insertDiv: function($where) {
-    return this.div.renderEditable($where);
+  insertOrReturnDiv: function($where) {
+    /* Appends field to given HTML element $where or returns the field as editable. */
+    return this.field.renderEditable($where);
   },
   getValue: function() {
-    return this.div.value();
+    /* Returns field's value. */
+    return this.field.value();
   }
 };
-
-
 
 var PopoutEditable = {
   // PopoutEditables are elements which have multiple fields of information
@@ -402,7 +416,7 @@ var ContentSection = {
   init: function(id, parentGenerator) {
     // generates each field in fields as a placeholder.
     /*
-      Arguments:
+      Params:
         id (Int): the integer to be used as this section's id.
     */
     id = Number(id);
