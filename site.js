@@ -785,31 +785,48 @@ var EmailGenerator = {
 };
 
 var Controller = {
-  init: function() {
-    this.copyCodeBtn = document.getElementById('copyCodeBtn');
-    this.addSectionBtn = document.getElementById('addSectionBtn');
-    this.startOverBtn = document.getElementById('startoverBtn');
+  /* The controller/menu for controlling broad functions of the web app.
 
-    this.copyCodeBtn.addEventListener('click', this.copyCodeHandler.bind(this));
-    this.addSectionBtn.addEventListener('click', this.addSectionHandler.bind(this));
-    this.startOverBtn.addEventListener('click', this.startOverHandler.bind(this));
+  The Controller contains several buttons which allow the user to operate
+  on the generator itself. See below:
+
+  Attributes:
+    $copyCodeBtn (HTML Element): The button which allows users to copy
+      the generated code to the clipboard.
+    $addSectionBtn (HTML Element): The button which allows user to add a
+      ContentSection to the EmailGenerator.
+    $startOverBtn (HTML Element): Refreshes the page to discard all
+      changes.
+  */
+  init: function() {
+    this.$copyCodeBtn = document.getElementById('copyCodeBtn');
+    this.$addSectionBtn = document.getElementById('addSectionBtn');
+    this.$startOverBtn = document.getElementById('startoverBtn');
+
+    this.$copyCodeBtn.addEventListener('click', this.copyCodeHandler.bind(this));
+    this.$addSectionBtn.addEventListener('click', this.addSectionHandler.bind(this));
+    this.$startOverBtn.addEventListener('click', this.startOverHandler.bind(this));
   },
 
   copyCodeHandler: function(e) {
+    // click handler to copy code.
     e.preventDefault();
     EmailGenerator.copyToClipboard();
   },
   addSectionHandler: function(e) {
+    // click handler to add a ContentSection.
     e.preventDefault();
     EmailGenerator.generateSection();
   },
   startOverHandler: function(e) {
+    // click handler to refresh the page and start over.
     e.preventDefault();
     location.reload();
   }
 };
 
 document.addEventListener('DOMContentLoaded', function(e) {
+  // Prep the web app when the page has loaded.
   EmailGenerator.init();
   PopoutEditor.init();
   Controller.init();
