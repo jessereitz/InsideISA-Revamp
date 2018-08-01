@@ -15,8 +15,7 @@ const CONTENT_TYPE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: n
 const CONTENT_TITLE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 24px; margin: 0; margin-top: 5px; color: #333;";
 const CONTENT_IMG_STYLE = "max-width: 100%;  text-align: center; margin-left: auto; margin-right: auto;";
 const CONTENT_BLURB_STYLE = "margin:0;padding-top:7px;padding-bottom:7px;padding: 20px;";
-const CONTENT_LINK_CTN_STYLE = "margin:0;padding-top:7px;padding-bottom:7px;;padding-left: 20px; padding-bottom: 20px; color: blue;";
-const CONTENT_LINK_STYLE = "color: inherit; text-decoration: none;";
+const CONTENT_LINK_STYLE = "display: block; text-decoration: none; margin:0;padding-top:7px;padding-bottom:7px;;padding-left: 20px; padding-bottom: 20px; color: blue;";
 const COPY_TEXTAREA_STYLE = "position: fixed; top: 0; left: 0; width: 2em; height: 2em; border: none; outline: none; padding: 0; boxShadow: none; background: transparent;";
 
 //////////////////////////////////////
@@ -476,11 +475,35 @@ var PopoutEditable = {
 };
 
 var ContentSection = {
+  /* The main modular component of the email.
+
+  ContentSections are the main part of the InsideISA email. They encapsulate
+  each piece of content the user would like toi include in the email.
+
+  Attributes:
+    id (Number): The numeric id for the ContentSection.
+    parentGenerator (EmailGenerator): The EmailGenerator which owns this
+      ContentSection.
+    idString (String): The String representation of this ContentSection's id.
+      This takes the form of "sectionN_" where 'N' is the id. This is used in
+      creating the ids of the individual components of the ContentSection.
+    placeholderStart (String): This is a similar idea to the idString except
+      that it provides a reader-friendly format of the id. Takes the form of
+      "SectionN " where 'N' is the id. This is used to display as a placeholder
+      for new and empty ContentSections.
+  */
   init: function(id, parentGenerator) {
     // generates each field in fields as a placeholder.
-    /*
-      Params:
-        id (Int): the integer to be used as this section's id.
+    /* Initializes the ContentSection.
+
+    Initializes the ContentSection by setting the id to the given value and
+    generating the requisite id string/placeholder as well as the
+    InlineEditables and PopoutEditables.
+
+    Params:
+      id (Int): the integer to be used as this section's id.
+      parentGenerator (EmailGenerator): the EmailGenerator to which this
+        ContentSection belongs.
     */
     id = Number(id);
     if (isNaN(id)) {
@@ -499,18 +522,53 @@ var ContentSection = {
 
   },
   addInlineField: function(fieldName, tagName, placeholder, style) {
+    /* Creates an InlineEditable and attaches it to this ContentSection.
+
+    Params
+      fieldName (String): The name of the field. Used as the property name on
+        this object as well as in the id for the InlineEditable.
+      tagName (String): the type of HTML tag to create for the InlineEditable.
+      placeholder (String): the placeholder text to be placed in the
+        InlineEditable by default.
+      style (String): the inline style to be added to the InlineEditable.
+    */
     this[fieldName] = Object.create(InlineEditable);
     this[fieldName].generateField(tagName, [], this.idString + fieldName, placeholder, style);
   },
   addPopoutField: function(fieldName, tagName, placeholder, popoutFields, style, ctnKlass) {
+    /* Creates a PopoutEditable and attaches it to this ContentSection.
+
+    Params
+      fieldName (String): The name of the field. Used as the property name on
+        this object as well as in the id for the PopoutEditable.
+        tagName (String): the type of HTML tag to create for the PopoutEditable.
+        placeholder (String): the placeholder text to be placed in the
+          InlineEditable by default.
+        popoutFields (Array of String): the fields to be displayed when editing
+          this PopoutEditable.
+        style (String): the inline style to be added to the PopoutEditable.
+        ctnKlass (String): the class to be added to the PopoutEditable's
+          editCtn. This provides customizability in the appearance of each
+          PopoutEditable (eg. img can look different than a link).
+
+    */
     this[fieldName] = Object.create(PopoutEditable);
     this[fieldName].init(tagName, placeholder, this.idString + fieldName, style, ctnKlass, this.ctn);
     this[fieldName].addFields(popoutFields);
 
   },
   addImageField: function() {
+    /* Add the image field to this ContentSection.
+
+    This method does two things:
+      1. Call this ContentSection's addPopoutField method to create a
+        PopoutEditable for the image.
+      2. Set a saveHandler for the image PopoutEditable.
+    */
     this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, CONTENT_IMG_FIELDS, CONTENT_IMG_STYLE, 'imgEdit');
     this.contentImage.setSaveHandler(function (e) {
+      // This saveHandler simply sets the URL, Title, and Alt Attributes
+      // for the image to those supplied by user in PopoutEditor.
       e.preventDefault();
       var url = this.getValue('URL');
       var title = this.getValue('Title');
@@ -527,18 +585,15 @@ var ContentSection = {
     });
   },
   addLinkField: function() {
+    /* Add the link field to this ContentSection.
+
+    This method does two things:
+      1. Call this ContentSection's addPopoutField method to create a
+        PopoutEditable for the link.
+      2. Creates an inner container for the link
+      2. Set a saveHandler for the link PopoutEditable.
+    */
     this.addPopoutField('contentLink', 'a', this.placeholderStart + PLACEHOLDER_LINK, CONTENT_LINK_FIELDS, CONTENT_LINK_STYLE, 'linkEdit');
-    var ctn = generateElement('div');
-    ctn.setAttribute('style', CONTENT_LINK_CTN_STYLE);
-    this.contentLink.ctn = ctn;
-    this.contentLink.renderEditable = function($where) {
-      this.ctn.append(this.el);
-      var tmpEl = this.el;
-      this.el = this.ctn;
-      var proto = Object.getPrototypeOf(this);
-      proto.renderEditable.call(this, $where);
-      this.el = tmpEl;
-    };
     this.contentLink.setSaveHandler(function (e) {
       e.preventDefault();
       var href = this.getValue('URL');
