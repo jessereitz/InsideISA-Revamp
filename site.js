@@ -666,27 +666,59 @@ var ContentSection = {
     this.ctn.parentNode.removeChild(this.ctn);
     this.parentGenerator.deleteContentSection(this);
   }
-
 };
 
 var EmailGenerator = {
+  /* The overall generator tool. Encompasses the entire email.
+
+  The EmailGenerator encompasses the entire InsideISA email. From the
+  intro section to each ContentSection, to the bottom buttons, this
+  object contains it all and provides the broad functionality of the web
+  app (add section, copy the code, etc).
+
+  Attributes
+    contentSections (Array of ContentSection): The ContentSections
+      contained within the EmailGenerator.
+    $contentSectionsCtn (HTML Element): The HTML element to act as the
+      container for the rendered ContentSections.
+    $bottomBtns (HTML Element): The HTML Element containing the buttons
+      at the bottom of the $contentSectionsCtn. ContentSections are
+      inserted before these buttons.
+    $copyTarget (HTML Element): The target to which the final code will
+      be briefly attached in order to allow it to copied to the
+      clipboard.
+  */
   init: function() {
-    // find the email container in the document, generate first content section,
-    // get everything good to go.
+    /* Initializes the EmailGenerator. */
     this.contentSections = [];
-    this.container = document.getElementById('contentSectionsCtn');
-    this.contentSectionsCtn = document.getElementById('contentSectionsCtn');
-    this.bottomBtns = document.getElementById('bottomBtns');
-    this.copyTarget = document.getElementById('copyTarget');
+    this.$contentSectionsCtn = document.getElementById('contentSectionsCtn');
+    this.$bottomBtns = document.getElementById('bottomBtns');
+    this.$copyTarget = document.getElementById('copyTarget');
     this.generateIntroduction();
-    this.generateSection();
+    this.generateSection(); // generate the first ContentSection
   },
   generateIntroduction: function() {
+    // Generates the introduction paragraph.
     this.introduction = Object.create(InlineEditable);
     this.introduction.generateField('p', [], 'introPara', PLACEHOLDER_INTRO);
     this.introduction.renderEditable(document.getElementById('introCtn'));
   },
   generateSection: function() {
+    /* Generates a ContentSection.
+
+    Because a ContentSection's id is seen by the user, we use a one-index
+    instead of zero. Because ContentSections can be arbitrarily created
+    and deleted, we always use the id of the last ContentSection in the
+    array to determine the id for the new one. This causes a bit of
+    hassle for finding ContentSections in the array as its id doesn't
+    match up perfectly with its index, but it makes more sense to the
+    user (they don't see Section 1, 4, 2). It also prevents any bugs
+    when trying to create ContentSections with duplicate ids and indices
+    (eg. create Section 1, 2, and 3; delete 2; create a new one--now
+    Section 2 is after Section 3--then create another one--oops, two
+    Section 3s.).
+
+    */
     var section = Object.create(ContentSection);
     var sectionId;
     if (this.contentSections.length > 0) {
@@ -696,15 +728,33 @@ var EmailGenerator = {
     }
     section.init(sectionId, this);
     this.contentSections.push(section);
-    this.contentSectionsCtn.insertBefore(section.renderEditable(), this.bottomBtns);
+    this.$contentSectionsCtn.insertBefore(section.renderEditable(), this.$bottomBtns);
   },
   deleteContentSection: function(section) {
+    // Deletes the given section from this.contentSections.
     var sectionIndex = this.contentSections.indexOf(section);
     this.contentSections.splice(sectionIndex, 1);
   },
   copyToClipboard: function() {
-    // Copy the content of the email to the clipboard for easy pasting into GRS.
-    var copyTarget = this.copyTarget.cloneNode(true);
+    /* Copy the content of the email to the clipboard.
+
+    In order to make the transferring of the InsideISA content to GRS as
+    easy as possible, the contents are automatically copied to the user's
+    clipboard. This takes some finagling but works pretty well.
+
+    First, a copy of the copyTarget is made so that allowing the user to
+    copy multiple times is a bit easier on our end (we can just throw
+    away the copy of the copyTarget). The contents of the introduction
+    and each ContentSection is then rendered and attached to the
+    copyTarget.
+
+    After this, a dummy TextArea HTML Element is temporarily created with
+    style that effectively hides it from view. This allows us to paste
+    the outerHTML of the copyTarget in an element which allows for
+    focusing and selecting, allowing us to copy the code to the
+    clipboard. The TextArea is then removed.
+    */
+    var copyTarget = this.$copyTarget.cloneNode(true);
     var contentCtn = copyTarget.querySelector('#copyTarget-contentSectionsCtn');
     var introCtn = copyTarget.querySelector('#copyTarget-introCtn');
     var bottomBtns = copyTarget.querySelector('#copyTarget-bottomBtns');
@@ -715,8 +765,7 @@ var EmailGenerator = {
       contentCtn.insertBefore(sec, bottomBtns);
     }
     var copyTextarea = document.createElement('textarea');
-    var copyTextStyle = COPY_TEXTAREA_STYLE;
-    copyTextarea.setAttribute('style', copyTextStyle);
+    copyTextarea.setAttribute('style', COPY_TEXTAREA_STYLE);
     copyTextarea.value = copyTarget.outerHTML;
     document.body.append(copyTextarea);
     copyTextarea.focus();
@@ -732,15 +781,6 @@ var EmailGenerator = {
     if (successful) {
       window.alert('successfully copied!');
     }
-  },
-  generateTableCtn: function() {
-    var table = document.createElement('table');
-    table.setAttribute('align', 'center');
-    table.setAttribute('cellpaddding', '0');
-    table.setAttribute('cellspacing', '0');
-    table.setAttribute('border', '0');
-    table.setAttribute('width', '600');
-    table.setAttribute('style', TABLE_CTN_STYLE);
   },
 };
 
