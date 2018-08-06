@@ -735,6 +735,13 @@ var EmailGenerator = {
     var sectionIndex = this.contentSections.indexOf(section);
     this.contentSections.splice(sectionIndex, 1);
   },
+  createCopyTextarea: function(content) {
+    // Create and return a textarea with correct style filled with given content
+    var copyTextarea = document.createElement('textarea');
+    copyTextarea.setAttribute('style', COPY_TEXTAREA_STYLE);
+    copyTextarea.value = content;
+    return copyTextarea;
+  },
   copyToClipboard: function() {
     /* Copy the content of the email to the clipboard.
 
@@ -764,9 +771,7 @@ var EmailGenerator = {
       var sec = contentSection.renderFinal();
       contentCtn.insertBefore(sec, bottomBtns);
     }
-    var copyTextarea = document.createElement('textarea');
-    copyTextarea.setAttribute('style', COPY_TEXTAREA_STYLE);
-    copyTextarea.value = copyTarget.outerHTML;
+    var copyTextarea = this.createCopyTextare(copyTarget.outerHTML);
     document.body.append(copyTextarea);
     copyTextarea.focus();
     copyTextarea.select();
