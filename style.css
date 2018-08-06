@@ -145,6 +145,7 @@ body {
 .popoutEdit {
   border: 2px solid rgba(0,0,0,0);
   transition: border-color 0.2s;
+  min-height: 1.5em;
 }
 
 .editable:hover,
