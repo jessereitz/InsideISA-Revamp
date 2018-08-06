@@ -98,7 +98,7 @@ body {
   padding: 0.25em;
   padding-left: 0.25em;
   padding-right: 0.25em;
-  min-width: 15em;
+  min-height: 1.5em;
 }
 
 .popoutEditor .editable:hover {
