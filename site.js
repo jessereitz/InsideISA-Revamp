@@ -65,25 +65,40 @@ function generateElement(tagName, klasses, id) {
 /////     Popout     /////
 //////////////////////////
 var Popout = {
-  /* Popout is a generic box that can be used to contain dynamically generated
-  content.
-  */
+  /* A generic pop-up box used for containing dynamic content.
 
+  Attributes:
+    $ctn (HTML element): the container which acts as the actual popup.
+    popoutDefaultOffClickHandler (function): the default function called when
+      a user clicks off this popout.
+  */
   initPopout: function() {
+    /* Initialize the popout. */
     this.$ctn = generateElement('div', ['popoutCtn', 'hide']);
     document.body.append(this.$ctn);
     this.replaceOffClickHandler(this.popoutDefaultOffClickHandler.bind(this));
   },
   fillWithContent: function($content) {
+    // fill $ctn with content.
     this.$ctn.append($content);
   },
   displayPopout: function(xPos, yPos) {
+    // Displays the popout at given coorddinates.
     this.$ctn.style.top = yPos;
     this.$ctn.style.left = xPos;
     this.$ctn.classList.remove('hide');
     this.hidden = false;
   },
   displayAtElement($el, includeOffset) {
+    /* Displays the Popout just next to the given element.
+
+    Params:
+      $el (HTML element): the HTML element next to which the Popout will be
+        displayed.
+      includeOffset (boolean): If true, the current Y scroll position will
+        be included in the vertical position of the Popout. If false, it will
+        not be included.
+    */
     var rect = $el.getBoundingClientRect();
     var right = rect.right + 25;
     var offset;
@@ -104,6 +119,7 @@ var Popout = {
     this.hidden = true;
   },
   empty() {
+    // removes all children from $ctn.
     while(this.$ctn.firstChild) {
       this.$ctn.removeChild(this.$ctn.firstChild);
     }
@@ -135,7 +151,24 @@ var Popout = {
 /////     Popout Editor     /////
 /////////////////////////////////
 var PopoutEditor = {
+  /*  PopoutEditor allows quick editing of more complex elements (img, a, etc).
 
+    This is used for the image and link sections of the InsideISA email, which
+    require more input from the user in order to properly be displayed. It uses
+    the generic Popout as its prototype.
+
+    Attributes:
+      $form (HTML Element): The HTML form contained within $editor.
+      fields (Array of PopoutEditorField): The fields to be displayed as part
+        of the PopoutEditor.
+      $saveBtn (HTML Element): The save (submit) button for $form.
+      $cancelBtn (HTML Element): A button in $form that dismisses the
+        PopoutEditor without saving the user's changes.
+      fields (Array of PopoutEditorField): An Array of the fields that currently
+        compose the PopoutEditor.
+      saveHandler (function): The function to be called when the #saveBtn is
+        clicked.
+  */
 
   init() {
     /* Initialize the PopoutEditor
@@ -157,6 +190,7 @@ var PopoutEditor = {
     this.replaceOffClickHandler(this.defaultOffClickHandler.bind(this));
   },
   generateForm() {
+    /* Generate the form and button elements for the PopoutEditor. */
     this.$form = generateElement('form');
     this.$saveBtn = generateElement('input', ['standardBtn'], 'popoutSave');
     this.$saveBtn.type = 'submit';
@@ -807,26 +841,38 @@ var EmailGenerator = {
     return copyTextarea;
   },
   createCopyPopout: function() {
+    /* Create a Popout to contain and display HTML content from email.
+
+    This method creates a new object linked to Popout. It also creates the
+    needed elements and methods contained within.
+    */
     if (!this.copyPopout) {
       this.copyPopout = Object.create(Popout);
       this.copyPopout.initPopout();
       this.copyPopout.$ctn.classList.add('copyPopout');
     }
+    // Create message area
     this.copyPopout.$messageHeading = generateElement('h2');
     this.copyPopout.$message = generateElement('div');
-
+    // Create button to close the Popout
     this.copyPopout.$copyBtn = generateElement('button', ['standardBtn']);
     this.copyPopout.$copyBtn.addEventListener('click', this.copyPopout.hidePopout.bind(this.copyPopout));
     this.copyPopout.$copyBtn.textContent = "Done";
-
+    // Create the textarea element to which the HTML will be copied
     this.copyPopout.textArea = generateElement('textarea', ['copyTextarea']);
 
+    // Insert the newly created elements in the Popout
     this.copyPopout.fillWithContent(this.copyPopout.$messageHeading);
     this.copyPopout.fillWithContent(this.copyPopout.$message);
     this.copyPopout.fillWithContent(this.copyPopout.textArea);
     this.copyPopout.fillWithContent(this.copyPopout.$copyBtn);
-
+    // method for filling the textarea with content
+    this.copyPopout.fillTextarea = function(content) {
+      this.textArea.value = content;
+    }
+    // method for copying the content.
     this.copyPopout.copyContent = function() {
+      /* Copy the contents of the textarea to clipboard and display a success message. */
       this.textArea.focus();
       this.textArea.select();
       var successful;
@@ -874,7 +920,7 @@ var EmailGenerator = {
       var sec = contentSection.renderFinal();
       contentCtn.insertBefore(sec, bottomBtns);
     }
-    this.copyPopout.textArea.value = copyTarget.outerHTML;
+    this.copyPopout.fillTextarea(copyTarget.outerHTML);
     this.copyPopout.displayAtElement($displayEl, false);
     var successful = this.copyPopout.copyContent();
   },
@@ -907,6 +953,7 @@ var Controller = {
   copyCodeHandler: function(e) {
     // click handler to copy code.
     e.preventDefault();
+    // stop propogation to prevent automatically closing the Popout
     e.stopPropagation();
     // console.log(e.target);
     EmailGenerator.copyToClipboard(e.target);
