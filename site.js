@@ -107,7 +107,6 @@ var Popout = {
       offset = 0;
     }
     var top = rect.top + offset;
-    console.log(right, top);
     this.displayPopout(right, top);
   },
   hidePopout: function() {
@@ -131,7 +130,6 @@ var Popout = {
     current editable or the Popout, the Popout will be hidden and
     all changes will be lost.
    */
-   console.log('hey');
     if (!this.hidden && (!this.$ctn.contains(e.target))) {
       this.hidePopout();
     }
@@ -955,7 +953,6 @@ var Controller = {
     e.preventDefault();
     // stop propogation to prevent automatically closing the Popout
     e.stopPropagation();
-    // console.log(e.target);
     EmailGenerator.copyToClipboard(e.target);
   },
   addSectionHandler: function(e) {
