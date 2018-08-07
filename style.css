@@ -125,10 +125,6 @@ body {
   margin: 0.25em auto;
 }
 
-.copyPopout div {
-  /* margin: 0.25em auto; */
-}
-
 .copyPopout textarea {
   display: block;
   width: 100%;
@@ -183,8 +179,12 @@ body {
 }
 
 .imgEdit {
+  box-sizing: border-box;
   display: block;
   position: relative;
+  min-height: 10rem;
+  overflow: auto;
+  border-color: #fff;
 }
 
 .imgEdit__text {
@@ -193,6 +193,7 @@ body {
   display: block;
   visibility: hidden;
   position: absolute;
+  width: 100%;
   left: 0;
   right: 0;
   top: 0;
@@ -202,7 +203,7 @@ body {
   font-size: 2em;
   background: rgba(255,255,255, 0);
   text-align: center;
-  padding-top: 5em;
+  line-height: 10rem;
   transition: all 0.2s;
 }
 
