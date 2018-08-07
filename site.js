@@ -1,4 +1,4 @@
-(function InitializeInsideISAEmailGenerator() {
+// (function InitializeInsideISAEmailGenerator() {
   'use strict';
 
 ////////////////////////////////////
@@ -61,30 +61,44 @@ function generateElement(tagName, klasses, id) {
     return el;
 }
 
+//////////////////////////
+/////     Popout     /////
+//////////////////////////
+var Popout = {
+  /* Popout is a generic box that can be used to contain dynamically generated
+  content.
+  */
+
+  initPopout: function() {
+    this.$ctn = generateElement('div', ['popoutCtn', 'hide']);
+    document.body.append(this.$ctn);
+  },
+  fillWithContent: function($content) {
+    this.$ctn.append($content);
+  },
+  displayPopout: function(xPos, yPos) {
+    this.$ctn.style.top = yPos;
+    this.$ctn.style.left = xPos;
+    this.$ctn.classList.remove('hide');
+    this.hidden = false;
+  },
+  hidePopout: function() {
+    // while (this.$ctn.firstChild) {
+    //   this.$ctn.removeChild(this.$ctn.firstChild);
+    // }
+    this.$ctn.classList.add('hide');
+    this.hidden = true;
+  }
+};
+
 
 /////////////////////////////////
 /////     Popout Editor     /////
 /////////////////////////////////
 var PopoutEditor = {
-  /*  PopoutEditor allows quick editing of more complex elements (img, a, etc).
 
-    This is used for the image and link sections of the InsideISA email, which
-    require more input from the user in order to properly be displayed.
 
-    Attributes:
-      $editor (HTML Element): The HTML Element containing the editor.
-      $form (HTML Element): The HTML form contained within $editor.
-      fields (Array of PopoutEditorField): The fields to be displayed as part
-        of the PopoutEditor.
-      $saveBtn (HTML Element): The save (submit) button for $form.
-      $cancelBtn (HTML Element): A button in $form that dismisses the
-        PopoutEditor without saving the user's changes.
-      fields (Array of PopoutEditorField): An Array of the fields that currently
-        compose the PopoutEditor.
-      saveHandler (function): The function to be called when the #saveBtn is
-        clicked.
-  */
-  init: function() {
+  init() {
     /* Initialize the PopoutEditor
 
     This method initializes the PopoutEditor by finding its respective elements,
@@ -92,17 +106,32 @@ var PopoutEditor = {
     event listeners to $form, $cancelBtn, and the document object.
 
     */
-    this.$editor = document.getElementById("popoutEditor");
-    this.$form = this.$editor.getElementsByTagName('form')[0];
-    this.$saveBtn = this.$form.querySelector('#popoutSave');
-    this.$cancelBtn = this.$form.querySelector('#popoutCancel');
+    this.proto = Object.getPrototypeOf(this);
+    this.initPopout();
+    this.generateForm();
+    // this.$ctn.append(this.generateForm());
+    console.log(this.$ctn);
+    this.$ctn.classList.add('popoutEditor');
     this.fields = [];
     this.hide();
     this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
     this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
     document.addEventListener('click', this.defaultOffClickHandler.bind(this));
   },
-  setup: function(editable, saveHandler) {
+  generateForm() {
+    this.$form = generateElement('form');
+    this.$saveBtn = generateElement('input', ['standardBtn'], 'popoutSave');
+    this.$saveBtn.type = 'submit';
+    this.$saveBtn.value = 'Save';
+    this.$cancelBtn = generateElement('button', ['standardBtn'], 'popoutCancel');
+    this.$cancelBtn.textContent = 'Cancel';
+    this.$form.append(this.$saveBtn);
+    this.$form.append(this.$cancelBtn);
+    console.log(this.$form);
+    this.$ctn.append(this.$form);
+    return this.$form;
+  },
+  setup(editable, saveHandler) {
     /* Sets up the PopoutEditor for use.
 
     This method differs from the init method in that it adds the appropriate
@@ -154,16 +183,9 @@ var PopoutEditor = {
       this.handler = undefined;
     }
   },
-  display: function(xPos, yPos) {
-    /* Display the PopoutEditor at the given x-position (xPos) and y-position (yPos) */
-    this.$editor.style.top = yPos;
-    this.$editor.style.left = xPos;
-    this.$editor.classList.remove('hide');
-    this.hidden = false;
-  },
-  hide: function() {
+  hide() {
     /* Hide the PopoutEditor and remove the active state from the editable. */
-    this.$editor.classList.add('hide');
+    this.$ctn.classList.add('hide');
     this.hidden = true;
     if (this.editable) {
       this.editable.clickOffHandler();
@@ -173,13 +195,14 @@ var PopoutEditor = {
       this.$form.removeChild(field.label);
       this.$form.removeChild(field.field.el);
     }
+    this.hidePopout();
   },
-  defaultHideHandler: function(e) {
+  defaultHideHandler(e) {
     /* This method provides default functionality for hiding the PopoutEditor. */
     e.preventDefault();
     this.hide();
   },
-  defaultOffClickHandler: function(e) {
+  defaultOffClickHandler(e) {
     /* Auto-hide PopoutEditor if user clicks off.
 
     This is the default method for auto-hiding the PopoutEditor if a user
@@ -187,11 +210,151 @@ var PopoutEditor = {
     current editable or the PopoutEditor, the PopoutEditor will be hidden and
     all changes will be lost.
    */
-    if (!this.hidden && (!this.$editor.contains(e.target) && !this.editable.wasClicked(e))) {
+    if (!this.hidden && (!this.$ctn.contains(e.target) && !this.editable.wasClicked(e))) {
       this.hide();
     }
+  },
+  display(xPos, yPos) {
+    this.displayPopout(xPos, yPos);
   }
 };
+Object.setPrototypeOf(PopoutEditor, Popout);
+// var PopoutEditor = {
+//   /*  PopoutEditor allows quick editing of more complex elements (img, a, etc).
+//
+//     This is used for the image and link sections of the InsideISA email, which
+//     require more input from the user in order to properly be displayed.
+//
+//     Attributes:
+//       $editor (HTML Element): The HTML Element containing the editor.
+//       $form (HTML Element): The HTML form contained within $editor.
+//       fields (Array of PopoutEditorField): The fields to be displayed as part
+//         of the PopoutEditor.
+//       $saveBtn (HTML Element): The save (submit) button for $form.
+//       $cancelBtn (HTML Element): A button in $form that dismisses the
+//         PopoutEditor without saving the user's changes.
+//       fields (Array of PopoutEditorField): An Array of the fields that currently
+//         compose the PopoutEditor.
+//       saveHandler (function): The function to be called when the #saveBtn is
+//         clicked.
+//   */
+//   init: function() {
+//     /* Initialize the PopoutEditor
+//
+//     This method initializes the PopoutEditor by finding its respective elements,
+//     ensures that its html elements are hidden, and attaching the appropriate
+//     event listeners to $form, $cancelBtn, and the document object.
+//
+//     */
+//
+//     this.$ctn.append(this.generateForm())
+//     this.fields = [];
+//     this.hide(); // pull to new obj
+//     this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
+//     this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
+//     document.addEventListener('click', this.defaultOffClickHandler.bind(this));
+//   },
+//   generateForm: function() {
+//     this.$form = generateElement('form');
+//     this.$saveBtn = generateElement('input', ['standardBtn'], 'popoutSave');
+//     this.$saveBtn.type = 'submit';
+//     this.$saveBtn.value = 'Save';
+//     this.$cancelBtn = generateElement('button', ['standardBtn'], 'popoutCancel');
+//     this.$cancelBtn.textContent = 'Cancel';
+//     this.$form.append(this.$saveBtn);
+//     this.$form.append(this.$cancelBtn);
+//     return this.$form;
+//   }
+//   setup: function(editable, saveHandler) {
+//     /* Sets up the PopoutEditor for use.
+//
+//     This method differs from the init method in that it adds the appropriate
+//     fields and saveHandler to the PopoutEditor. The init method merely ensure
+//     the PopoutEditor exists and that it has the proper properties for use; setup
+//     actually gets it ready for use by the user.
+//
+//     setup does five things:
+//       1. Iterate through and remove current fields, if applicable
+//       2. Resets current editable, if applicable. This ensures current editable
+//           no longer displays as active.
+//       3. Assigns PopoutEditor's editable to that passed. Makes this.fields point
+//           to new editable's fields.
+//       4. Renders fields into $form.
+//       5. Assigns the given saveHandler to be called on $form submit.
+//
+//     Params:
+//       editable (PopoutEditable): the PopoutEditable which is being edited.
+//       saveHandler (Function): the function to call on $form submit.
+//     */
+//     for (let field of this.fields) {
+//       if (this.$form.contains(field.label)) {
+//         this.$form.removeChild(field.label);
+//       }
+//       if (this.$form.contains(field.field.el)) {
+//         this.$form.removeChild(field.field.el);
+//       }
+//     }
+//     if (this.editable) {
+//       this.editable.clickOffHandler();
+//     }
+//     if (editable) {
+//       this.editable = editable;
+//       if (this.editable.fields) {
+//         this.fields = this.editable.fields;
+//       } else {
+//         this.fields = [];
+//       }
+//
+//     }
+//     for (let field of this.fields) {
+//       this.$form.insertBefore(field.insertOrReturnLabel(), this.$saveBtn);
+//       this.$form.insertBefore(field.insertOrReturnDiv(), this.$saveBtn);
+//     }
+//     if (saveHandler && typeof saveHandler === 'function') {
+//       this.saveHandler = saveHandler;
+//       this.$form.addEventListener('submit', this.saveHandler);
+//     } else {
+//       this.handler = undefined;
+//     }
+//   },
+//   display: function(xPos, yPos) {
+//     /* Display the PopoutEditor at the given x-position (xPos) and y-position (yPos) */
+//     this.$editor.style.top = yPos;
+//     this.$editor.style.left = xPos;
+//     this.$editor.classList.remove('hide');
+//     this.hidden = false;
+//   },
+//   hide: function() {
+//     /* Hide the PopoutEditor and remove the active state from the editable. */
+//     this.$editor.classList.add('hide');
+//     this.hidden = true;
+//     if (this.editable) {
+//       this.editable.clickOffHandler();
+//     }
+//     this.$saveBtn.removeEventListener('submit', this.saveHandler);
+//     for (let field of this.fields) {
+//       this.$form.removeChild(field.label);
+//       this.$form.removeChild(field.field.el);
+//     }
+//   },
+//   defaultHideHandler: function(e) {
+//     /* This method provides default functionality for hiding the PopoutEditor. */
+//     e.preventDefault();
+//     this.hide();
+//   },
+//   defaultOffClickHandler: function(e) {
+//     /* Auto-hide PopoutEditor if user clicks off.
+//
+//     This is the default method for auto-hiding the PopoutEditor if a user
+//     clicks off the editor. If the user clicks on any element other than the
+//     current editable or the PopoutEditor, the PopoutEditor will be hidden and
+//     all changes will be lost.
+//    */
+//     if (!this.hidden && (!this.$editor.contains(e.target) && !this.editable.wasClicked(e))) {
+//       this.hide();
+//     }
+//   }
+// };
 
 
 var InlineEditable = {
@@ -836,4 +999,4 @@ document.addEventListener('DOMContentLoaded', function(e) {
   PopoutEditor.init();
   Controller.init();
 });
-})();
+// })();
