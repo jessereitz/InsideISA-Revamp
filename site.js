@@ -1,4 +1,4 @@
-// (function InitializeInsideISAEmailGenerator() {
+(function InitializeInsideISAEmailGenerator() {
   'use strict';
 
 ////////////////////////////////////
@@ -976,4 +976,4 @@ document.addEventListener('DOMContentLoaded', function(e) {
   PopoutEditor.init();
   Controller.init();
 });
-// })();
+})();
