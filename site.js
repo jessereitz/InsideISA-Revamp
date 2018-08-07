@@ -72,6 +72,7 @@ var Popout = {
   initPopout: function() {
     this.$ctn = generateElement('div', ['popoutCtn', 'hide']);
     document.body.append(this.$ctn);
+    this.replaceOffClickHandler(this.popoutDefaultOffClickHandler.bind(this));
   },
   fillWithContent: function($content) {
     this.$ctn.append($content);
@@ -82,12 +83,43 @@ var Popout = {
     this.$ctn.classList.remove('hide');
     this.hidden = false;
   },
+  displayAtElement($el) {
+    var rect = $el.getBoundingClientRect();
+    var right = rect.right + 25;
+    var top = rect.top + window.scrollY;
+    this.displayPopout(right, top);
+  },
   hidePopout: function() {
     // while (this.$ctn.firstChild) {
     //   this.$ctn.removeChild(this.$ctn.firstChild);
     // }
     this.$ctn.classList.add('hide');
     this.hidden = true;
+  },
+  empty() {
+    while(this.$ctn.firstChild) {
+      this.$ctn.removeChild(this.$ctn.firstChild);
+    }
+  },
+  popoutDefaultOffClickHandler(e) {
+    /* Auto-hide Popout if user clicks off.
+
+    This is the default method for auto-hiding the Popout if a user
+    clicks off the editor. If the user clicks on any element other than the
+    current editable or the Popout, the Popout will be hidden and
+    all changes will be lost.
+   */
+   console.log('hey');
+    if (!this.hidden && (!this.$ctn.contains(e.target))) {
+      this.hidePopout();
+    }
+  },
+  replaceOffClickHandler(handler) {
+    if (this.offClickHandler) {
+      document.removeEventListener('click', this.offClickHandler);
+    }
+    this.offClickHandler = handler;
+    document.addEventListener('click', this.offClickHandler);
   }
 };
 
@@ -110,13 +142,12 @@ var PopoutEditor = {
     this.initPopout();
     this.generateForm();
     // this.$ctn.append(this.generateForm());
-    console.log(this.$ctn);
     this.$ctn.classList.add('popoutEditor');
     this.fields = [];
     this.hide();
     this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
     this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
-    document.addEventListener('click', this.defaultOffClickHandler.bind(this));
+    this.replaceOffClickHandler(this.defaultOffClickHandler.bind(this));
   },
   generateForm() {
     this.$form = generateElement('form');
@@ -127,7 +158,6 @@ var PopoutEditor = {
     this.$cancelBtn.textContent = 'Cancel';
     this.$form.append(this.$saveBtn);
     this.$form.append(this.$cancelBtn);
-    console.log(this.$form);
     this.$ctn.append(this.$form);
     return this.$form;
   },
@@ -720,6 +750,7 @@ var EmailGenerator = {
     this.$contentSectionsCtn = document.getElementById('contentSectionsCtn');
     this.$bottomBtns = document.getElementById('bottomBtns');
     this.$copyTarget = document.getElementById('copyTarget');
+    this.createCopyPopout();
     this.generateIntroduction();
     this.generateSection(); // generate the first ContentSection
   },
@@ -764,11 +795,50 @@ var EmailGenerator = {
   createCopyTextarea: function(content) {
     // Create and return a textarea with correct style filled with given content
     var copyTextarea = document.createElement('textarea');
-    copyTextarea.setAttribute('style', COPY_TEXTAREA_STYLE);
+    // copyTextarea.setAttribute('style', COPY_TEXTAREA_STYLE);
     copyTextarea.value = content;
     return copyTextarea;
   },
-  copyToClipboard: function() {
+  createCopyPopout: function() {
+    if (!this.copyPopout) {
+      this.copyPopout = Object.create(Popout);
+      this.copyPopout.initPopout();
+      this.copyPopout.$ctn.classList.add('copyPopout');
+    }
+    this.copyPopout.$messageHeading = generateElement('h1');
+    this.copyPopout.$message = generateElement('div');
+
+    this.copyPopout.$copyBtn = generateElement('button', ['standardBtn']);
+    this.copyPopout.$copyBtn.addEventListener('click', this.copyPopout.hidePopout.bind(this.copyPopout));
+    this.copyPopout.$copyBtn.textContent = "Done";
+
+    this.copyPopout.textArea = generateElement('textarea', ['copyTextarea']);
+
+    this.copyPopout.fillWithContent(this.copyPopout.$messageHeading);
+    this.copyPopout.fillWithContent(this.copyPopout.$message);
+    this.copyPopout.fillWithContent(this.copyPopout.textArea);
+    this.copyPopout.fillWithContent(this.copyPopout.$copyBtn);
+
+    this.copyPopout.copyContent = function() {
+      this.textArea.focus();
+      this.textArea.select();
+      var successful;
+      try {
+        successful = document.execCommand('copy');
+      } catch (err) {
+        successful = false;
+      }
+      if (successful) {
+        this.$messageHeading.textContent = "Email content copied!";
+        this.$message.textContent = "You can now paste the email content into GRS.";
+      } else {
+        this.$messageHeading.textContent = "Uh oh...";
+        this.$message.textContent = "We couldn't copy the email content. Try again or manually copy the content below";
+      }
+      return successful;
+    }
+  },
+  copyToClipboard: function($displayEl) {
     /* Copy the content of the email to the clipboard.
 
     In order to make the transferring of the InsideISA content to GRS as
@@ -797,20 +867,22 @@ var EmailGenerator = {
       var sec = contentSection.renderFinal();
       contentCtn.insertBefore(sec, bottomBtns);
     }
-    var copyTextarea = this.createCopyTextarea(copyTarget.outerHTML);
-    document.body.append(copyTextarea);
-    copyTextarea.focus();
-    copyTextarea.select();
-
-    var successful;
-    try {
-      successful = document.execCommand('copy');
-    } catch (err) {
-      console.error('err');
-    }
-    document.body.removeChild(copyTextarea);
+    this.copyPopout.textArea.value = copyTarget.outerHTML;
+    this.copyPopout.displayAtElement($displayEl);
+    var successful = this.copyPopout.copyContent();
+    // copyTextarea.focus();
+    // copyTextarea.select();
+    //
+    // var successful;
+    // try {
+    //   successful = document.execCommand('copy');
+    // } catch (err) {
+    //   console.error('err');
+    // }
+    // this.$copyPopout.hidePopout(copyTextarea);
+    // this.$copyPopout.empty();
     if (successful) {
-      window.alert('successfully copied!');
+      // window.alert('successfully copied!');
     }
   },
 };
@@ -842,7 +914,8 @@ var Controller = {
   copyCodeHandler: function(e) {
     // click handler to copy code.
     e.preventDefault();
-    EmailGenerator.copyToClipboard();
+    e.stopPropagation();
+    EmailGenerator.copyToClipboard(e.target);
   },
   addSectionHandler: function(e) {
     // click handler to add a ContentSection.
