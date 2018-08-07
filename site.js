@@ -83,10 +83,17 @@ var Popout = {
     this.$ctn.classList.remove('hide');
     this.hidden = false;
   },
-  displayAtElement($el) {
+  displayAtElement($el, includeOffset) {
     var rect = $el.getBoundingClientRect();
     var right = rect.right + 25;
-    var top = rect.top + window.scrollY;
+    var offset;
+    if (includeOffset) {
+      offset = window.scrollY;
+    } else {
+      offset = 0;
+    }
+    var top = rect.top + offset;
+    console.log(right, top);
     this.displayPopout(right, top);
   },
   hidePopout: function() {
@@ -805,7 +812,7 @@ var EmailGenerator = {
       this.copyPopout.initPopout();
       this.copyPopout.$ctn.classList.add('copyPopout');
     }
-    this.copyPopout.$messageHeading = generateElement('h1');
+    this.copyPopout.$messageHeading = generateElement('h2');
     this.copyPopout.$message = generateElement('div');
 
     this.copyPopout.$copyBtn = generateElement('button', ['standardBtn']);
@@ -868,22 +875,8 @@ var EmailGenerator = {
       contentCtn.insertBefore(sec, bottomBtns);
     }
     this.copyPopout.textArea.value = copyTarget.outerHTML;
-    this.copyPopout.displayAtElement($displayEl);
+    this.copyPopout.displayAtElement($displayEl, false);
     var successful = this.copyPopout.copyContent();
-    // copyTextarea.focus();
-    // copyTextarea.select();
-    //
-    // var successful;
-    // try {
-    //   successful = document.execCommand('copy');
-    // } catch (err) {
-    //   console.error('err');
-    // }
-    // this.$copyPopout.hidePopout(copyTextarea);
-    // this.$copyPopout.empty();
-    if (successful) {
-      // window.alert('successfully copied!');
-    }
   },
 };
 
@@ -915,6 +908,7 @@ var Controller = {
     // click handler to copy code.
     e.preventDefault();
     e.stopPropagation();
+    // console.log(e.target);
     EmailGenerator.copyToClipboard(e.target);
   },
   addSectionHandler: function(e) {
