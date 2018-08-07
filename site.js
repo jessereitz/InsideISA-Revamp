@@ -1,4 +1,4 @@
-(function InitializeInsideISAEmailGenerator() {
+// (function InitializeInsideISAEmailGenerator() {
   'use strict';
 
 ////////////////////////////////////
@@ -61,6 +61,91 @@ function generateElement(tagName, klasses, id) {
     return el;
 }
 
+//////////////////////////
+/////     Popout     /////
+//////////////////////////
+var Popout = {
+  /* A generic pop-up box used for containing dynamic content.
+
+  Attributes:
+    $ctn (HTML element): the container which acts as the actual popup.
+    popoutDefaultOffClickHandler (function): the default function called when
+      a user clicks off this popout.
+  */
+  initPopout: function() {
+    /* Initialize the popout. */
+    this.$ctn = generateElement('div', ['popoutCtn', 'hide']);
+    document.body.append(this.$ctn);
+    this.replaceOffClickHandler(this.popoutDefaultOffClickHandler.bind(this));
+  },
+  fillWithContent: function($content) {
+    // fill $ctn with content.
+    this.$ctn.append($content);
+  },
+  displayPopout: function(xPos, yPos) {
+    // Displays the popout at given coorddinates.
+    this.$ctn.style.top = yPos;
+    this.$ctn.style.left = xPos;
+    this.$ctn.classList.remove('hide');
+    this.hidden = false;
+  },
+  displayAtElement($el, includeOffset) {
+    /* Displays the Popout just next to the given element.
+
+    Params:
+      $el (HTML element): the HTML element next to which the Popout will be
+        displayed.
+      includeOffset (boolean): If true, the current Y scroll position will
+        be included in the vertical position of the Popout. If false, it will
+        not be included.
+    */
+    var rect = $el.getBoundingClientRect();
+    var right = rect.right + 25;
+    var offset;
+    if (includeOffset) {
+      offset = window.scrollY;
+    } else {
+      offset = 0;
+    }
+    var top = rect.top + offset;
+    console.log(right, top);
+    this.displayPopout(right, top);
+  },
+  hidePopout: function() {
+    // while (this.$ctn.firstChild) {
+    //   this.$ctn.removeChild(this.$ctn.firstChild);
+    // }
+    this.$ctn.classList.add('hide');
+    this.hidden = true;
+  },
+  empty() {
+    // removes all children from $ctn.
+    while(this.$ctn.firstChild) {
+      this.$ctn.removeChild(this.$ctn.firstChild);
+    }
+  },
+  popoutDefaultOffClickHandler(e) {
+    /* Auto-hide Popout if user clicks off.
+
+    This is the default method for auto-hiding the Popout if a user
+    clicks off the editor. If the user clicks on any element other than the
+    current editable or the Popout, the Popout will be hidden and
+    all changes will be lost.
+   */
+   console.log('hey');
+    if (!this.hidden && (!this.$ctn.contains(e.target))) {
+      this.hidePopout();
+    }
+  },
+  replaceOffClickHandler(handler) {
+    if (this.offClickHandler) {
+      document.removeEventListener('click', this.offClickHandler);
+    }
+    this.offClickHandler = handler;
+    document.addEventListener('click', this.offClickHandler);
+  }
+};
+
 
 /////////////////////////////////
 /////     Popout Editor     /////
@@ -69,10 +154,10 @@ var PopoutEditor = {
   /*  PopoutEditor allows quick editing of more complex elements (img, a, etc).
 
     This is used for the image and link sections of the InsideISA email, which
-    require more input from the user in order to properly be displayed.
+    require more input from the user in order to properly be displayed. It uses
+    the generic Popout as its prototype.
 
     Attributes:
-      $editor (HTML Element): The HTML Element containing the editor.
       $form (HTML Element): The HTML form contained within $editor.
       fields (Array of PopoutEditorField): The fields to be displayed as part
         of the PopoutEditor.
@@ -84,7 +169,8 @@ var PopoutEditor = {
       saveHandler (function): The function to be called when the #saveBtn is
         clicked.
   */
-  init: function() {
+
+  init() {
     /* Initialize the PopoutEditor
 
     This method initializes the PopoutEditor by finding its respective elements,
@@ -92,17 +178,31 @@ var PopoutEditor = {
     event listeners to $form, $cancelBtn, and the document object.
 
     */
-    this.$editor = document.getElementById("popoutEditor");
-    this.$form = this.$editor.getElementsByTagName('form')[0];
-    this.$saveBtn = this.$form.querySelector('#popoutSave');
-    this.$cancelBtn = this.$form.querySelector('#popoutCancel');
+    this.proto = Object.getPrototypeOf(this);
+    this.initPopout();
+    this.generateForm();
+    // this.$ctn.append(this.generateForm());
+    this.$ctn.classList.add('popoutEditor');
     this.fields = [];
     this.hide();
     this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
     this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
-    document.addEventListener('click', this.defaultOffClickHandler.bind(this));
+    this.replaceOffClickHandler(this.defaultOffClickHandler.bind(this));
   },
-  setup: function(editable, saveHandler) {
+  generateForm() {
+    /* Generate the form and button elements for the PopoutEditor. */
+    this.$form = generateElement('form');
+    this.$saveBtn = generateElement('input', ['standardBtn'], 'popoutSave');
+    this.$saveBtn.type = 'submit';
+    this.$saveBtn.value = 'Save';
+    this.$cancelBtn = generateElement('button', ['standardBtn'], 'popoutCancel');
+    this.$cancelBtn.textContent = 'Cancel';
+    this.$form.append(this.$saveBtn);
+    this.$form.append(this.$cancelBtn);
+    this.$ctn.append(this.$form);
+    return this.$form;
+  },
+  setup(editable, saveHandler) {
     /* Sets up the PopoutEditor for use.
 
     This method differs from the init method in that it adds the appropriate
@@ -154,16 +254,9 @@ var PopoutEditor = {
       this.handler = undefined;
     }
   },
-  display: function(xPos, yPos) {
-    /* Display the PopoutEditor at the given x-position (xPos) and y-position (yPos) */
-    this.$editor.style.top = yPos;
-    this.$editor.style.left = xPos;
-    this.$editor.classList.remove('hide');
-    this.hidden = false;
-  },
-  hide: function() {
+  hide() {
     /* Hide the PopoutEditor and remove the active state from the editable. */
-    this.$editor.classList.add('hide');
+    this.$ctn.classList.add('hide');
     this.hidden = true;
     if (this.editable) {
       this.editable.clickOffHandler();
@@ -173,13 +266,14 @@ var PopoutEditor = {
       this.$form.removeChild(field.label);
       this.$form.removeChild(field.field.el);
     }
+    this.hidePopout();
   },
-  defaultHideHandler: function(e) {
+  defaultHideHandler(e) {
     /* This method provides default functionality for hiding the PopoutEditor. */
     e.preventDefault();
     this.hide();
   },
-  defaultOffClickHandler: function(e) {
+  defaultOffClickHandler(e) {
     /* Auto-hide PopoutEditor if user clicks off.
 
     This is the default method for auto-hiding the PopoutEditor if a user
@@ -187,12 +281,15 @@ var PopoutEditor = {
     current editable or the PopoutEditor, the PopoutEditor will be hidden and
     all changes will be lost.
    */
-    if (!this.hidden && (!this.$editor.contains(e.target) && !this.editable.wasClicked(e))) {
+    if (!this.hidden && (!this.$ctn.contains(e.target) && !this.editable.wasClicked(e))) {
       this.hide();
     }
+  },
+  display(xPos, yPos) {
+    this.displayPopout(xPos, yPos);
   }
 };
-
+Object.setPrototypeOf(PopoutEditor, Popout);
 
 var InlineEditable = {
   /* InlineEditables are elements which can be editable in-place.
@@ -694,6 +791,7 @@ var EmailGenerator = {
     this.$contentSectionsCtn = document.getElementById('contentSectionsCtn');
     this.$bottomBtns = document.getElementById('bottomBtns');
     this.$copyTarget = document.getElementById('copyTarget');
+    this.createCopyPopout();
     this.generateIntroduction();
     this.generateSection(); // generate the first ContentSection
   },
@@ -735,7 +833,65 @@ var EmailGenerator = {
     var sectionIndex = this.contentSections.indexOf(section);
     this.contentSections.splice(sectionIndex, 1);
   },
-  copyToClipboard: function() {
+  createCopyTextarea: function(content) {
+    // Create and return a textarea with correct style filled with given content
+    var copyTextarea = document.createElement('textarea');
+    // copyTextarea.setAttribute('style', COPY_TEXTAREA_STYLE);
+    copyTextarea.value = content;
+    return copyTextarea;
+  },
+  createCopyPopout: function() {
+    /* Create a Popout to contain and display HTML content from email.
+
+    This method creates a new object linked to Popout. It also creates the
+    needed elements and methods contained within.
+    */
+    if (!this.copyPopout) {
+      this.copyPopout = Object.create(Popout);
+      this.copyPopout.initPopout();
+      this.copyPopout.$ctn.classList.add('copyPopout');
+    }
+    // Create message area
+    this.copyPopout.$messageHeading = generateElement('h2');
+    this.copyPopout.$message = generateElement('div');
+    // Create button to close the Popout
+    this.copyPopout.$copyBtn = generateElement('button', ['standardBtn']);
+    this.copyPopout.$copyBtn.addEventListener('click', this.copyPopout.hidePopout.bind(this.copyPopout));
+    this.copyPopout.$copyBtn.textContent = "Done";
+    // Create the textarea element to which the HTML will be copied
+    this.copyPopout.textArea = generateElement('textarea', ['copyTextarea']);
+
+    // Insert the newly created elements in the Popout
+    this.copyPopout.fillWithContent(this.copyPopout.$messageHeading);
+    this.copyPopout.fillWithContent(this.copyPopout.$message);
+    this.copyPopout.fillWithContent(this.copyPopout.textArea);
+    this.copyPopout.fillWithContent(this.copyPopout.$copyBtn);
+    // method for filling the textarea with content
+    this.copyPopout.fillTextarea = function(content) {
+      this.textArea.value = content;
+    }
+    // method for copying the content.
+    this.copyPopout.copyContent = function() {
+      /* Copy the contents of the textarea to clipboard and display a success message. */
+      this.textArea.focus();
+      this.textArea.select();
+      var successful;
+      try {
+        successful = document.execCommand('copy');
+      } catch (err) {
+        successful = false;
+      }
+      if (successful) {
+        this.$messageHeading.textContent = "Email content copied!";
+        this.$message.textContent = "You can now paste the email content into GRS.";
+      } else {
+        this.$messageHeading.textContent = "Uh oh...";
+        this.$message.textContent = "We couldn't copy the email content. Try again or manually copy the content below";
+      }
+      return successful;
+    }
+  },
+  copyToClipboard: function($displayEl) {
     /* Copy the content of the email to the clipboard.
 
     In order to make the transferring of the InsideISA content to GRS as
@@ -764,23 +920,9 @@ var EmailGenerator = {
       var sec = contentSection.renderFinal();
       contentCtn.insertBefore(sec, bottomBtns);
     }
-    var copyTextarea = document.createElement('textarea');
-    copyTextarea.setAttribute('style', COPY_TEXTAREA_STYLE);
-    copyTextarea.value = copyTarget.outerHTML;
-    document.body.append(copyTextarea);
-    copyTextarea.focus();
-    copyTextarea.select();
-
-    var successful;
-    try {
-      successful = document.execCommand('copy');
-    } catch (err) {
-      console.error('err');
-    }
-    document.body.removeChild(copyTextarea);
-    if (successful) {
-      window.alert('successfully copied!');
-    }
+    this.copyPopout.fillTextarea(copyTarget.outerHTML);
+    this.copyPopout.displayAtElement($displayEl, false);
+    var successful = this.copyPopout.copyContent();
   },
 };
 
@@ -811,7 +953,10 @@ var Controller = {
   copyCodeHandler: function(e) {
     // click handler to copy code.
     e.preventDefault();
-    EmailGenerator.copyToClipboard();
+    // stop propogation to prevent automatically closing the Popout
+    e.stopPropagation();
+    // console.log(e.target);
+    EmailGenerator.copyToClipboard(e.target);
   },
   addSectionHandler: function(e) {
     // click handler to add a ContentSection.
@@ -831,4 +976,4 @@ document.addEventListener('DOMContentLoaded', function(e) {
   PopoutEditor.init();
   Controller.init();
 });
-})();
+// })();
