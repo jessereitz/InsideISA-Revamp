@@ -27,6 +27,7 @@ const PLACEHOLDER_INTRO = "Enter your introduction here!";
 const PLACEHOLDER_TYPE = "Content Type";
 const PLACEHOLDER_TITLE = "Content Title";
 const PLACEHOLDER_IMG = './images/placeholder.gif';
+const PLACEHOLDER_IMG_ALT = "Placeholder Image. Click to edit.";
 const PLACEHOLDER_BLURB = "This is the blurb";
 const PLACEHOLDER_LINK = "Learn More";
 
@@ -672,6 +673,7 @@ var ContentSection = {
       2. Set a saveHandler for the image PopoutEditable.
     */
     var field = this.addPopoutField('contentImage', 'img', PLACEHOLDER_IMG, CONTENT_IMG_FIELDS, CONTENT_IMG_STYLE, 'imgEdit');
+    field.el.alt = PLACEHOLDER_IMG_ALT;
     field.setSaveHandler(function (e) {
       // This saveHandler simply sets the URL, Title, and Alt Attributes
       // for the image to those supplied by user in PopoutEditor.
@@ -869,7 +871,7 @@ var EmailGenerator = {
     // method for filling the textarea with content
     this.copyPopout.fillTextarea = function(content) {
       this.textArea.value = content;
-    }
+    };
     // method for copying the content.
     this.copyPopout.copyContent = function() {
       /* Copy the contents of the textarea to clipboard and display a success message. */
