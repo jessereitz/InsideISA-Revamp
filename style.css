@@ -64,6 +64,10 @@ body {
   min-height: 200px;
 }
 
+.popoutEditor .standardBtn:last-child {
+  margin-left: 0.5rem;
+}
+
 .popoutCtn::before,
 .popoutEditor::before {
   background: white;
