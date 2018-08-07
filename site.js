@@ -8,14 +8,12 @@
   These constants are used for the inline-style on various pieces of the HTML
   email.
 */
-const TABLE_CTN_STYLE = "font-family: Helvetica Neue, Helvetica, Arial, sans-serif;color: #333333; font-size:16px;";
 const TD_CTN_STYLE = "border-bottom: 3px solid #ddd; position: relative;";
 const CONTENT_TYPE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 16px; margin: 0; padding: 20px; padding-top: 3px; padding-bottom: 3px; margin-top: 17px; color: #888;";
 const CONTENT_TITLE_STYLE = "font-family: 'Helvetica', sans-serif; font-weight: normal; font-size: 24px; margin: 0; padding: 20px; padding-top: 3px; padding-bottom: 3px; margin-bottom: 17px; color: #333;";
 const CONTENT_IMG_STYLE = "max-width: 100%;  text-align: center; margin-left: auto; margin-right: auto;";
 const CONTENT_BLURB_STYLE = "margin:0;padding-top:7px;padding-bottom:7px;padding: 20px;";
 const CONTENT_LINK_STYLE = "display: block; text-decoration: none; margin:0;padding-top:7px;padding-bottom:7px;;padding-left: 20px; padding-bottom: 20px; color: blue;";
-const COPY_TEXTAREA_STYLE = "position: fixed; top: 0; left: 0; width: 2em; height: 2em; border: none; outline: none; padding: 0; boxShadow: none; background: transparent;";
 
 //////////////////////////////////////
 /////     TEXT PLACEHOLDERS     //////
@@ -891,7 +889,7 @@ var EmailGenerator = {
         this.$message.textContent = "We couldn't copy the email content. Try again or manually copy the content below";
       }
       return successful;
-    }
+    };
   },
   copyToClipboard: function($displayEl) {
     /* Copy the content of the email to the clipboard.
@@ -924,7 +922,7 @@ var EmailGenerator = {
     }
     this.copyPopout.fillTextarea(copyTarget.outerHTML);
     this.copyPopout.displayAtElement($displayEl, false);
-    var successful = this.copyPopout.copyContent();
+    this.copyPopout.copyContent();
   },
 };
 
