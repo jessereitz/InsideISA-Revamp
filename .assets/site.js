@@ -792,6 +792,7 @@ var EmailGenerator = {
     this.createCopyPopout();
     this.generateIntroduction();
     this.generateSection(); // generate the first ContentSection
+    this.$contentSectionsCtn.addEventListener('paste', this.pasteHandler.bind(this));
   },
   generateIntroduction: function() {
     // Generates the introduction paragraph.
@@ -921,6 +922,13 @@ var EmailGenerator = {
     this.copyPopout.fillTextarea(copyTarget.outerHTML);
     this.copyPopout.displayAtElement($displayEl, false);
     this.copyPopout.copyContent();
+  },
+  pasteHandler: function(e) {
+    if (e.type !== 'paste') return false;
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertHTML', false, text);
+    return true;
   },
 };
 
