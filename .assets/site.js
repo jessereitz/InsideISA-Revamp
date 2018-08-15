@@ -60,6 +60,15 @@ function generateElement(tagName, klasses, id) {
     return el;
 }
 
+function pasteAsPlainText(e) {
+  /* Forces pasting as plain text */
+  if (e.type !== 'paste') return false;
+  e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  document.execCommand('insertHTML', false, text);
+  return true;
+}
+
 //////////////////////////
 /////     Popout     /////
 //////////////////////////
@@ -76,6 +85,7 @@ var Popout = {
     this.$ctn = generateElement('div', ['popoutCtn', 'hide']);
     document.body.append(this.$ctn);
     this.replaceOffClickHandler(this.popoutDefaultOffClickHandler.bind(this));
+    this.$ctn.addEventListener('paste', pasteAsPlainText.bind(this));
   },
   fillWithContent: function($content) {
     // fill $ctn with content.
@@ -792,7 +802,7 @@ var EmailGenerator = {
     this.createCopyPopout();
     this.generateIntroduction();
     this.generateSection(); // generate the first ContentSection
-    this.$contentSectionsCtn.addEventListener('paste', this.pasteHandler.bind(this));
+    this.$contentSectionsCtn.addEventListener('paste', pasteAsPlainText.bind(this));
   },
   generateIntroduction: function() {
     // Generates the introduction paragraph.
@@ -922,13 +932,6 @@ var EmailGenerator = {
     this.copyPopout.fillTextarea(copyTarget.outerHTML);
     this.copyPopout.displayAtElement($displayEl, false);
     this.copyPopout.copyContent();
-  },
-  pasteHandler: function(e) {
-    if (e.type !== 'paste') return false;
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertHTML', false, text);
-    return true;
   },
 };
 
