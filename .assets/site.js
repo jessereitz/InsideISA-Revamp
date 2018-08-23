@@ -194,6 +194,7 @@ var PopoutEditor = {
     this.hide();
     this.$form.addEventListener('submit', this.defaultHideHandler.bind(this));
     this.$cancelBtn.addEventListener('click', this.defaultHideHandler.bind(this));
+    this.$form.addEventListener('keydown', this.keyDownHandler.bind(this));
     this.replaceOffClickHandler(this.defaultOffClickHandler.bind(this));
   },
   generateForm() {
@@ -294,7 +295,13 @@ var PopoutEditor = {
   },
   display(xPos, yPos) {
     this.displayPopout(xPos, yPos);
-  }
+  },
+  keyDownHandler(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.$saveBtn.click();
+    }
+  },
 };
 Object.setPrototypeOf(PopoutEditor, Popout);
 
@@ -333,7 +340,6 @@ var InlineEditable = {
     if (style) {
       this.el.setAttribute('style', style);
     }
-    this.el.addEventListener('click', this.clickHandler.bind(this));
   },
   insertOrReturnHTML: function($where, $node) {
     /* Append the HTML for el to $where or simply return the HTML for el. */
@@ -361,10 +367,6 @@ var InlineEditable = {
     dupNode.classList.remove('editable');
     dupNode.removeAttribute('contenteditable');
     return this.insertOrReturnHTML($where, dupNode);
-  },
-  clickHandler: function(e) {
-    this.el.focus();
-    document.execCommand('selectAll', false, null);
   },
   value: function() {
     /* Returns the value of the editable, similar to a form field. */
